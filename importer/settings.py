@@ -6,8 +6,8 @@ from dotenv import dotenv_values
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG = dotenv_values(BASE_DIR / ".env")
 
-WATCH_DIR = CONFIG.get("WATCH_DIR")
-WATCH_DIR = str(BASE_DIR / "test_dir") if WATCH_DIR is None else str(WATCH_DIR)
+TEST_DIR = str(BASE_DIR / "test_dir")
+WATCH_DIR = CONFIG.get("WATCH_DIR") or TEST_DIR
 
 DB_CONFIG = {
     "host": CONFIG.get("HOST"),

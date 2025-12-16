@@ -5,7 +5,6 @@ from dotenv import dotenv_values
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG = dotenv_values(BASE_DIR / ".env")
-LOGS_DIR = BASE_DIR / "logs"
 WATCH_DIR = CONFIG.get("WATCH_DIR", f"{BASE_DIR}/test_dir")
 
 DB_CONFIG = {
@@ -15,4 +14,14 @@ DB_CONFIG = {
     "password": CONFIG.get("ADMIN_PASSWORD", ""),
     "database": CONFIG.get("DATABASE", ""),
     "autocommit": False,
+}
+
+LOG_DIR = BASE_DIR / "log"
+LOG_FILE_NAME = "xml_importer.log"
+LOGGER_CONFIG = {
+    "file_path": str(LOG_DIR / LOG_FILE_NAME),
+    "rotation": "10 MB",
+    "retention": "1 week",
+    "compression": "gz",
+    "level": "INFO",
 }

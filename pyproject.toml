@@ -17,8 +17,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
-src = ["src"]
+src = ["importer"]
 extend-exclude = [".env"]
 
 [tool.ruff.lint]
@@ -27,7 +26,7 @@ select = ["E", "F", "I", "B", "SIM", "RET", "Q"]
 [tool.ruff.lint.isort]
 default-section = "third-party"
 combine-as-imports = true
-known-local-folder = ["src"]
+known-local-folder = ["importer"]
 length-sort-straight = true
 lines-after-imports = 2
 

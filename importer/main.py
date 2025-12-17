@@ -1,7 +1,7 @@
 
+from importer.import_prod_dop import import_prod_dop
 from importer.logger import logger
 from importer.settings import WATCH_DIR
-from importer.sql_utils import import_prod_dop
 from importer.xml_utils import get_xml_files
 
 

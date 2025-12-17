@@ -1,11 +1,22 @@
 
-from importer.database import close_db, connect_db
 from importer.logger import logger
 from importer.settings import WATCH_DIR
+from importer.sql_utils import import_prod_dop
 from importer.xml_utils import get_xml_files
 
 
 def main():
+    """
+    Точка входа обработчика XML-файлов.
+
+    Функция:
+    - Проверяет, что задана директория для мониторинга (WATCH_DIR).
+    - Получает список XML-файлов в директории.
+    - Для известных файлов запускает соответствующий импорт.
+    - После успешной обработки удаляет файл, чтобы не импортировать его повторно.
+    - При ошибке логирует исключение и оставляет файл на месте для повторной попытки.
+
+    """
     logger.info("Запуск обработчика XML-файлов.")
 
     if not WATCH_DIR:
@@ -18,17 +29,24 @@ def main():
         logger.warning(f"XML-файлы отсутствуют в директории {WATCH_DIR}.")
         return
 
-    logger.info(f"Обнаружено XML-файлов: {len(xml_files)}")
+    for file_path in xml_files:
+        try:
+            logger.info(f"Обработка файла: {file_path.name}")
 
-    try:
-        conn = connect_db()
-        for xml_file in xml_files:
-            logger.info(xml_file.name)
-    except Exception as e:
-        logger.error(f"Ошибка при обработке XML-файлов: {e}")
-    finally:
-        if conn:
-            close_db(conn)
+            if file_path.name == "prod_dop.xml":
+                import_prod_dop(file_path)
+            # elif file_path.name == "warehouses.xml":
+            #     import_warehouses(file_path)
+            else:
+                logger.warning(f"Неизвестный XML-файл пропущен: {file_path.name}")
+                continue
+
+            file_path.unlink()
+            logger.info(f"Файл обработан и удалён: {file_path.name}")
+
+        except Exception:
+            logger.exception(f"Не удалось обработать файл: {file_path.name}")
+            # файл НЕ удаляем — останется для повторной попытки
 
     logger.info("Работа обработчика завершена.")
 

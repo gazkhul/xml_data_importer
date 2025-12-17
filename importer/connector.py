@@ -16,12 +16,13 @@ def connect_db() -> mariadb.Connection:
         logger.info("Подключение к базе данных выполнено успешно!")
         return conn
     except mariadb.Error as e:
-        logger.error(f"Ошибка подключения к базе данных: {e}")
-        logger.critical("Не удалось установить соединение с БД. Завершение работы.")
+        logger.error(f"Ошибка подключения к базе данных: {e}.")
         sys.exit(1)
 
 def close_db(conn: mariadb.Connection) -> None:
     """Закрывает соединение с базой данных."""
-    if conn:
+    try:
         conn.close()
         logger.info("Соединение с базой данных закрыто.")
+    except mariadb.Error as e:
+        logger.error(f"Ошибка при закрытии соединения с базой данных: {e}")

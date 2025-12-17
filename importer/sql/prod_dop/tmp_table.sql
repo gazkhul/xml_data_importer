@@ -1,3 +1,3 @@
 CREATE TEMPORARY TABLE tmp_prod_dop_ids (
     id_1c VARCHAR(36) PRIMARY KEY
-) ENGINE=MEMORY;
+) ENGINE=InnoDB;

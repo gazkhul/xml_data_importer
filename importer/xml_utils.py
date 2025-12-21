@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Generator, Optional
 from xml.etree.ElementTree import Element, iterparse
@@ -39,3 +40,8 @@ def read_delete_flag(xml_path: Path) -> bool:
         if elem.tag == "delete":
             return (elem.text or "").strip().lower() == "true"
     return False
+
+def parse_date(text: Optional[str]) -> Optional[date]:
+    if not text:
+        return None
+    return datetime.strptime(text, "%Y-%m-%d").date()

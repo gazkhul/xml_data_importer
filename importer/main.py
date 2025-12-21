@@ -1,5 +1,6 @@
 
 from importer.import_prod_dop import import_prod_dop
+from importer.import_warehouses import import_warehouses
 from importer.logger import logger
 from importer.settings import WATCH_DIR
 from importer.xml_utils import get_xml_files
@@ -35,8 +36,8 @@ def main():
 
             if file_path.name == "prod_dop.xml":
                 import_prod_dop(file_path)
-            # elif file_path.name == "warehouses.xml":
-            #     import_warehouses(file_path)
+            elif file_path.name == "warehouses.xml":
+                import_warehouses(file_path)
             else:
                 logger.warning(f"Неизвестный XML-файл пропущен: {file_path.name}")
                 continue

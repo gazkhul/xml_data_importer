@@ -38,8 +38,8 @@ def import_prod_dop(xml_path: Path) -> None:
 
     Логика:
     - Пакетный UPSERT по уникальному ключу UNIQUE(id_1c).
-    - Удаление записей, отсутствующих в XML, если в файле указан флаг <delete>true</delete>.
-    - Одна транзакция на один файл: при ошибке выполняется rollback.
+    - Удаление отсутствующих записей при <delete>true</delete>.
+    - Одна транзакция на один файл: при ошибке rollback.
     """
     logger.info(f"Импорт prod_dop.xml: {xml_path}")
 
@@ -61,14 +61,14 @@ def import_prod_dop(xml_path: Path) -> None:
         # --- UPSERT ---
         upsert_sql = load_sql("prod_dop/upsert.sql")
         cursor.executemany(upsert_sql, rows)
-        logger.info(f"Загружено записей в tbl_prod_dop (вставка/обновление): {cursor.rowcount}")
+        logger.info(f"Загружено записей в таблицу tbl_prod_dop (вставка/обновление): {cursor.rowcount}")
 
         # --- DELETE ---
         if delete_flag:
             tmp_table_sql = load_sql("prod_dop/tmp_table.sql")
             delete_sql = load_sql("prod_dop/delete_missing.sql")
 
-            logger.info("Удаление записей, отсутствующих в XML (snapshot).")
+            logger.info("Удаление записей, отсутствующих в XML-файле.")
 
             cursor.execute(tmp_table_sql)
 
@@ -81,7 +81,7 @@ def import_prod_dop(xml_path: Path) -> None:
             logger.info(f"Удалено строк: {cursor.rowcount}.")
 
         conn.commit()
-        logger.success("Импорт prod_dop завершён: транзакция зафиксирована.")
+        logger.success("Импорт prod_dop.xml завершён: транзакция зафиксирована.")
 
     except Exception:
         conn.rollback()

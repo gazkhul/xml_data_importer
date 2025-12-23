@@ -1,4 +1,4 @@
-from importer.settings import SQL_DIR
+from importer.config import SQL_DIR
 
 
 def load_sql(relative_path: str) -> str:

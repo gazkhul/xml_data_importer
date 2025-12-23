@@ -2,8 +2,8 @@ import sys
 
 import mariadb
 
+from importer.config import DB_CONFIG
 from importer.logger import logger
-from importer.settings import DB_CONFIG
 
 
 def connect_db() -> mariadb.Connection:

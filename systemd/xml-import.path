@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch XML import directory
+
+[Path]
+PathExistsGlob=/ПУТЬ/ДО/ДИРЕКТОРИИ/ИМПОРТА/*.xml
+
+[Install]
+WantedBy=multi-user.target

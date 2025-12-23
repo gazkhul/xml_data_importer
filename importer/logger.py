@@ -1,6 +1,6 @@
 from loguru import logger
 
-from importer.settings import LOGGER_CONFIG
+from importer.config import LOGGER_CONFIG
 
 
 logger.add(

@@ -4,19 +4,19 @@ from dotenv import dotenv_values
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-CONFIG = dotenv_values(BASE_DIR / ".env")
+ENV_FILE = dotenv_values(BASE_DIR / ".env")
 
 TEST_DIR = BASE_DIR / "test_dir"
-WATCH_DIR = CONFIG.get("WATCH_DIR") or TEST_DIR
+WATCH_DIR = ENV_FILE.get("WATCH_DIR") or TEST_DIR
 
 SQL_DIR = Path(__file__).resolve().parent / "sql"
 
 DB_CONFIG = {
-    "host": CONFIG.get("HOST"),
-    "port": int(CONFIG.get("PORT") or 3306),
-    "user": CONFIG.get("ADMIN_USER"),
-    "password": CONFIG.get("ADMIN_PASSWORD"),
-    "database": CONFIG.get("DATABASE"),
+    "host": ENV_FILE.get("HOST"),
+    "port": int(ENV_FILE.get("PORT") or 3306),
+    "user": ENV_FILE.get("ADMIN_USER"),
+    "password": ENV_FILE.get("ADMIN_PASSWORD"),
+    "database": ENV_FILE.get("DATABASE"),
     "autocommit": False,
 }
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=XML Import Worker
+After=network.target mariadb.service mysql.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/xml_data_importer
+Environment=PYTHONPATH=/opt/xml_data_importer
+ExecStart=/opt/xml_data_importer/venv/bin/python -m importer.worker
+
+TimeoutStartSec=600
+
+StandardOutput=journal
+StandardError=journal

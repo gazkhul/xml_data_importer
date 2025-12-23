@@ -8,9 +8,8 @@ User=root
 Group=root
 WorkingDirectory=/opt/xml_data_importer
 Environment=PYTHONPATH=/opt/xml_data_importer
-ExecStart=/opt/xml_data_importer/venv/bin/python -m importer.worker
-
-TimeoutStartSec=600
+ExecStartPre=/bin/sleep 60
+ExecStart=/opt/xml_data_importer/.venv/bin/python -m importer.main
 
 StandardOutput=journal
 StandardError=journal

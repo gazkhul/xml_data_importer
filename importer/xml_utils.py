@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any, Generator
 from xml.etree.ElementTree import Element, iterparse
 
 
@@ -11,7 +11,7 @@ def get_xml_files(watch_dir: str | Path) -> list[Path]:
     dir = Path(watch_dir)
     return list(dir.glob("*.xml"))
 
-def parse_bool(text: Optional[str]) -> int:
+def parse_bool(text: str | None) -> int:
     """
     Преобразует текстовое значение в 0/1 по правилу «true -> 1, иначе -> 0».
     """
@@ -41,7 +41,7 @@ def read_delete_flag(xml_path: Path) -> bool:
             return (elem.text or "").strip().lower() == "true"
     return False
 
-def parse_date(text: Optional[str]) -> Optional[date]:
+def parse_date(text: str | None) -> date | None:
     if not text:
         return None
     return datetime.strptime(text, "%Y-%m-%d").date()

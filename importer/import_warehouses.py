@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Optional, TypeAlias
+from typing import TypeAlias
 
 from importer.db import close_db, connect_db
 from importer.logger import logger
@@ -22,7 +22,7 @@ WarehouseRow: TypeAlias = tuple[
 ]
 
 
-def _get_text(line, tag: str) -> Optional[str]:
+def _get_text(line, tag: str) -> str | None:
     """
     Достаёт текст дочернего тега и чистит кавычки/пустые значения.
     """

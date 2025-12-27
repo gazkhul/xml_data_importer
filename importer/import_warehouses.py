@@ -2,66 +2,65 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TypeAlias
+from xml.etree.ElementTree import ParseError
 
-from importer.db import close_db, connect_db
+from importer.config import FILE_WAREHOUSES, SQL_CONFIG
 from importer.logger import logger
-from importer.sql_loader import load_sql
+from importer.report import ImportReport
+from importer.sync import sync_data
 from importer.xml_utils import iter_lines, parse_bool, parse_date, read_delete_flag
 
 
 WarehouseKey: TypeAlias = tuple[str, str]
 WarehouseRow: TypeAlias = tuple[
-    str,           # product_id_1c
-    str,           # stock_id_1c
-    date | None,   # edit_date
-    Decimal,       # price
-    int,           # it_rrc
-    date | None,   # change_price_date
-    date | None,   # load_price_date
-    int,           # arch
+    str,          # product_id_1c
+    str,          # stock_id_1c
+    date | None,  # edit_date
+    Decimal,      # price
+    int,          # it_rrc
+    date | None,  # change_price_date
+    date | None,  # load_price_date
+    int,          # arch
 ]
 
-
-def _get_text(line, tag: str) -> str | None:
+def _parse_warehouses(xml_path: Path, report: ImportReport) -> tuple[list[WarehouseRow], set[WarehouseKey]]:
     """
-    Достаёт текст дочернего тега и чистит кавычки/пустые значения.
-    """
-    el = line.find(tag)
-    if el is None or not el.text:
-        return None
-    return el.text.strip().strip('"')
-
-
-def _parse_warehouses(xml_path: Path) -> tuple[list[WarehouseRow], set[WarehouseKey]]:
-    """
-    Разбирает warehouses.xml и возвращает (rows, keys_in_file) для UPSERT и snapshot-удаления.
+    Парсит XML-файл построчно, извлекает цены, даты и служебные флаги.
+    Возвращает список подготовленных строк для БД и множество ключей (product_id, stock_id) для синхронизации.
     """
     rows: list[WarehouseRow] = []
     keys_in_file: set[WarehouseKey] = set()
+    total_lines = 4 # Смещение на заголовок
 
     for line in iter_lines(xml_path):
-        product_id_1c = line.attrib.get("product_id_1c")
-        stock_id_1c = line.attrib.get("stock_id_1c")
-
-        if not product_id_1c or not stock_id_1c:
-            continue
-
-        edit_date = parse_date(_get_text(line, "edit_date"))
-        raw_price = _get_text(line, "price") or "0.00"
+        total_lines += 1
 
         try:
-            price = Decimal(raw_price)
-        except InvalidOperation:
-            # Если цена битая — поставить 0.00.
-            price = Decimal("0.00")
+            product_id_1c = line.attrib.get("product_id_1c")
+            stock_id_1c = line.attrib.get("stock_id_1c")
 
-        it_rrc = parse_bool(_get_text(line, "it_rrc"))
-        change_price_date = parse_date(_get_text(line, "change_price_date"))
-        load_price_date = parse_date(_get_text(line, "load_price_date"))
-        arch = parse_bool(_get_text(line, "arch"))
+            if not product_id_1c:
+                raise ValueError(f"Отсутствует обязательный атрибут 'product_id_1c' в строке #{total_lines}.")
+            if not stock_id_1c:
+                raise ValueError(f"Отсутствует обязательный атрибут 'stock_id_1c' в строке #{total_lines}.")
 
-        rows.append(
-            (
+            raw_price = line.findtext("price") or "0.00"
+
+            try:
+                price = Decimal(raw_price)
+            except InvalidOperation as e:
+                raise ValueError(f"Некорректный формат цены: '{raw_price}'") from e
+
+            edit_date = parse_date(line.findtext("edit_date"), total_lines, field_name="edit_date")
+            load_price_date = parse_date(line.findtext("load_price_date"), total_lines, field_name="load_price_date")
+            change_price_date = parse_date(line.findtext(
+                "change_price_date"), total_lines, field_name="change_price_date"
+            )
+
+            it_rrc = parse_bool(line.findtext("it_rrc"), total_lines, field_name="it_rrc")
+            arch = parse_bool(line.findtext("arch"), total_lines, field_name="arch")
+
+            rows.append((
                 product_id_1c,
                 stock_id_1c,
                 edit_date,
@@ -70,68 +69,51 @@ def _parse_warehouses(xml_path: Path) -> tuple[list[WarehouseRow], set[Warehouse
                 change_price_date,
                 load_price_date,
                 arch,
-            )
-        )
-        keys_in_file.add((product_id_1c, stock_id_1c))
+            ))
+            keys_in_file.add((product_id_1c, stock_id_1c))
 
+        except ParseError as e:
+            raise ValueError (f"Критическая ошибка структуры XML: {e}") from e
+        except ValueError as e:
+            report.add_row_error(total_lines, str(e))
+            continue
+        except Exception as e:
+            report.add_row_error(total_lines, f"Неизвестная ошибка: {e}")
+            continue
+
+    report.set_rows_parsed(len(rows))
     return rows, keys_in_file
 
-
-def import_warehouses(xml_path: Path) -> None:
+def import_warehouses(xml_path: Path, report: ImportReport) -> None:
     """
-    Импортирует данные из warehouses.xml в таблицу warehouses.
-
-    Логика:
-    - Пакетный UPSERT по UNIQUE(product_id_1c, stock_id_1c).
-    - Удаление отсутствующих записей при <delete>true</delete>.
-    - Одна транзакция на один файл: при ошибке rollback.
+    Модуль для импорта данных из warehouses.xml.
+    Обрабатывает файл со складскими остатками, ценами и флагами,
+    выполняя вставку/обновление и удаление отсутствующих записей.
     """
-    logger.info(f"Импорт warehouses.xml: {xml_path}")
+    logger.info(f"Импорт {FILE_WAREHOUSES}: {xml_path}")
 
     delete_flag = read_delete_flag(xml_path)
     logger.info(f"Флаг 'delete': {delete_flag}")
 
-    rows, keys_in_file = _parse_warehouses(xml_path)
+    rows, keys_in_file = _parse_warehouses(xml_path, report)
 
     if not rows:
-        logger.warning(f"Данные в файле не найдены: {xml_path.name}")
+        logger.warning(f"В файле {xml_path.name} не найдено валидных данных для импорта.")
         return
 
-    logger.info("Разобрано строк: {}", len(rows))
+    row_count = len(rows)
+    logger.info(f"Готово к загрузке строк: {row_count}")
 
-    conn = connect_db()
-    cursor = conn.cursor()
+    conf = SQL_CONFIG["warehouses"]
 
-    try:
-        # --- UPSERT ---
-        upsert_sql = load_sql("warehouses/upsert.sql")
-        cursor.executemany(upsert_sql, rows)
-        logger.info(f"Загружено записей в таблицу warehouses (вставка/обновление): {cursor.rowcount}")
+    sync_data(
+        rows=rows,
+        keys=keys_in_file,
+        upsert_sql_path=conf["upsert"],
+        delete_flag=delete_flag,
+        tmp_table_sql_path=conf["tmp_table"],
+        delete_sql_path=conf["delete"],
+        insert_tmp_key_sql=conf["insert_keys_stmt"]
+    )
 
-        # --- DELETE ---
-        if delete_flag:
-            tmp_table_sql = load_sql("warehouses/tmp_table.sql")
-            delete_sql = load_sql("warehouses/delete_missing.sql")
-            insert_tmp_key_sql = (
-                "INSERT INTO tmp_warehouses_keys (product_id_1c, stock_id_1c) VALUES (%s, %s)"
-            )
-
-            logger.info("Удаление записей, отсутствующих в XML-файле.")
-
-            cursor.execute(tmp_table_sql)
-            cursor.executemany(insert_tmp_key_sql, list(keys_in_file))
-
-            cursor.execute(delete_sql)
-            logger.info(f"Удалено строк: {cursor.rowcount}.")
-
-        conn.commit()
-        logger.success("Импорт warehouses.xml завершён: транзакция зафиксирована.")
-
-    except Exception:
-        conn.rollback()
-        logger.exception("Ошибка импорта warehouses: выполнен откат транзакции (rollback).")
-        raise
-
-    finally:
-        cursor.close()
-        close_db(conn)
+    logger.success(f"Импорт {FILE_WAREHOUSES} завершён.")

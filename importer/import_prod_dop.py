@@ -1,93 +1,80 @@
 from pathlib import Path
 from typing import TypeAlias
+from xml.etree.ElementTree import ParseError
 
-from importer.db import close_db, connect_db
+from importer.config import FILE_PROD_DOP, SQL_CONFIG
 from importer.logger import logger
-from importer.sql_loader import load_sql
+from importer.report import ImportReport
+from importer.sync import sync_data
 from importer.xml_utils import iter_lines, parse_bool, read_delete_flag
 
 
 ProdDopRow: TypeAlias = tuple[str, int]
 
-def _parse_prod_dop(xml_path: Path) -> tuple[list[ProdDopRow], set[str]]:
+def _parse_prod_dop(xml_path: Path, report: ImportReport) -> tuple[list[ProdDopRow], set[tuple[str]]]:
     """
-    Разбирает prod_dop.xml и подготавливает данные для пакетной записи в БД.
-    Возвращает кортеж (rows, ids_in_file), где:
-    - rows: список кортежей (id_1c, it_ya) для executemany().
-    - ids_in_file: множество всех id_1c, встретившихся в файле (для snapshot-удаления).
+    Парсит XML-файл построчно, валидирует данные и собирает статистику ошибок.
+    Возвращает список подготовленных строк для БД и множество ключей (id_1c) для синхронизации.
     """
     rows: list[ProdDopRow] = []
-    ids_in_file: set[str] = set()
+    keys_in_file: set[tuple[str]] = set()
+    total_lines = 4 # Смещение на заголовок
 
     for line in iter_lines(xml_path):
-        id_1c = line.attrib.get("id_1c")
-        if not id_1c:
+        total_lines += 1
+
+        try:
+            id_1c = line.attrib.get("id_1c")
+
+            if not id_1c:
+                raise ValueError(f"Отсутствует id_1c в строке #{total_lines}.")
+
+            it_ya = parse_bool(line.findtext("it_ya"), total_lines, field_name="it_ya")
+            rows.append((id_1c, it_ya))
+            keys_in_file.add((id_1c,))
+
+        except ParseError as e:
+            raise ValueError (f"Критическая ошибка структуры XML: {e}") from e
+        except ValueError as e:
+            report.add_row_error(total_lines, str(e))
+            continue
+        except Exception as e:
+            report.add_row_error(total_lines, f"Неизвестная ошибка: {e}")
             continue
 
-        it_ya_elem = line.find("it_ya")
-        it_ya = parse_bool(it_ya_elem.text if it_ya_elem is not None else None)
+    report.set_rows_parsed(len(rows))
+    return rows, keys_in_file
 
-        rows.append((id_1c, it_ya))
-        ids_in_file.add(id_1c)
-
-    return rows, ids_in_file
-
-def import_prod_dop(xml_path: Path) -> None:
+def import_prod_dop(xml_path: Path, report: ImportReport) -> None:
     """
-    Импорт данных из prod_dop.xml в таблицу tbl_prod_dop.
-
-    Логика:
-    - Пакетный UPSERT по уникальному ключу UNIQUE(id_1c).
-    - Удаление отсутствующих записей при <delete>true</delete>.
-    - Одна транзакция на один файл: при ошибке rollback.
+    Модуль для импорта данных из prod_dop.xml.
+    Обрабатывает файл, извлекает ID продукта и флаг (it_ya),
+    после чего обновляет основную таблицу и удаляет устаревшие записи.
     """
-    logger.info(f"Импорт prod_dop.xml: {xml_path}")
+    logger.info(f"Импорт {FILE_PROD_DOP}: {xml_path}")
 
     delete_flag: bool = read_delete_flag(xml_path)
     logger.info(f"Флаг 'delete': {delete_flag}")
 
-    rows, ids_in_file = _parse_prod_dop(xml_path)
+    rows, keys_in_file = _parse_prod_dop(xml_path, report)
 
     if not rows:
-        logger.warning(f"Данные в файле не найдены: {xml_path.name}")
+        logger.warning(f"В файле {xml_path.name} не найдено валидных данных для импорта.")
         return
 
-    logger.info(f"Разобрано строк: {len(rows)}")
+    row_count = len(rows)
+    logger.info(f"Готово к загрузке строк: {row_count}")
 
-    conn = connect_db()
-    cursor = conn.cursor()
+    conf = SQL_CONFIG["prod_dop"]
 
-    try:
-        # --- UPSERT ---
-        upsert_sql = load_sql("prod_dop/upsert.sql")
-        cursor.executemany(upsert_sql, rows)
-        logger.info(f"Загружено записей в таблицу tbl_prod_dop (вставка/обновление): {cursor.rowcount}")
+    sync_data(
+        rows=rows,
+        keys=keys_in_file,
+        upsert_sql_path=conf["upsert"],
+        delete_flag=delete_flag,
+        tmp_table_sql_path=conf["tmp_table"],
+        delete_sql_path=conf["delete"],
+        insert_tmp_key_sql=conf["insert_keys_stmt"]
+    )
 
-        # --- DELETE ---
-        if delete_flag:
-            tmp_table_sql = load_sql("prod_dop/tmp_table.sql")
-            delete_sql = load_sql("prod_dop/delete_missing.sql")
-
-            logger.info("Удаление записей, отсутствующих в XML-файле.")
-
-            cursor.execute(tmp_table_sql)
-
-            cursor.executemany(
-                "INSERT INTO tmp_prod_dop_ids (id_1c) VALUES (%s)",
-                [(i,) for i in ids_in_file],
-            )
-
-            cursor.execute(delete_sql)
-            logger.info(f"Удалено строк: {cursor.rowcount}.")
-
-        conn.commit()
-        logger.success("Импорт prod_dop.xml завершён: транзакция зафиксирована.")
-
-    except Exception:
-        conn.rollback()
-        logger.exception("Ошибка импорта prod_dop: выполнен откат транзакции (rollback).")
-        raise
-
-    finally:
-        cursor.close()
-        close_db(conn)
+    logger.success(f"Импорт {FILE_PROD_DOP} завершён.")

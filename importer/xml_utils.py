@@ -1,7 +1,9 @@
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Generator
+from typing import Iterator
 from xml.etree.ElementTree import Element, iterparse
+
+from importer.config import DATE_FORMAT_XML
 
 
 def get_xml_files(watch_dir: str | Path) -> list[Path]:
@@ -11,16 +13,27 @@ def get_xml_files(watch_dir: str | Path) -> list[Path]:
     dir = Path(watch_dir)
     return list(dir.glob("*.xml"))
 
-def parse_bool(text: str | None) -> int:
+def parse_bool(text: str | None, line: int, field_name: str = "unknown") -> int:
     """
-    Преобразует текстовое значение в 0/1 по правилу «true -> 1, иначе -> 0».
+    Преобразует текстовое значение в 0/1 по правилу true -> 1, false -> 0».
+    Выбрасывает ValueError, если значение не 'true' и не 'false'.
     """
     if not text:
-        return 0
-    return 1 if text.strip().lower() == "true" else 0
+        raise ValueError(f"Отсутствует значение '{field_name}' в строке #{line}.")
 
+    clean_text = text.strip().lower()
 
-def iter_lines(xml_path: Path) -> Generator[Element, Any, None]:
+    match clean_text:
+        case "true":
+            return 1
+        case "false":
+            return 0
+        case _:
+            raise ValueError(
+                f"Некорректное значение '{field_name}' в строке #{line}: '{text}'. Ожидается true/false."
+            )
+
+def iter_lines(xml_path: Path) -> Iterator[Element]:
     """
     Итератор по элементам <line> в XML-файле.
     Реализован через потоковый парсинг (iterparse), чтобы не загружать весь XML в память.
@@ -36,12 +49,31 @@ def read_delete_flag(xml_path: Path) -> bool:
     """
     True, если в XML встречается <delete>true</delete>, иначе False.
     """
-    for _event, elem in iterparse(xml_path, events=("end",)):
+    context = iterparse(str(xml_path), events=("end",))
+    for _event, elem in context:
         if elem.tag == "delete":
-            return (elem.text or "").strip().lower() == "true"
+            val = (elem.text or "").strip().lower() == "true"
+            elem.clear()
+            return val
+        elem.clear()
     return False
 
-def parse_date(text: str | None) -> date | None:
+def parse_date(text: str | None, line: int, field_name: str = "unknown") -> date | None:
+    """
+    Парсит дату в формате YYYY-MM-DD.
+    Возвращает объект date или None (если текст пустой).
+    Выбрасывает ValueError, если формат некорректен.
+    """
     if not text:
         return None
-    return datetime.strptime(text, "%Y-%m-%d").date()
+
+    clean_text = text.strip()
+
+    if not clean_text:
+        return None
+
+    try:
+        return datetime.strptime(clean_text, DATE_FORMAT_XML).date()
+    except ValueError as e:
+        msg = f"Некорректный формат даты в строке #{line} в поле '{field_name}': '{text}'. Ожидается YYYY-MM-DD."
+        raise ValueError(msg) from e

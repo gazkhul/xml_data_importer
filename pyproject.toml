@@ -19,6 +19,7 @@ dev = [
 line-length = 120
 src = ["importer"]
 extend-exclude = [".env"]
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "SIM", "RET", "Q"]

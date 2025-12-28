@@ -54,7 +54,6 @@ LOGGER_CONFIG = {
 
 DATE_FORMAT_XML = "%Y-%m-%d"
 DATE_FORMAT_LOG = "%Y%m%d_%H%M%S"
-DATE_FORMAT_REPORT = "%Y-%m-%d %H:%M:%S"
 
 XML_ENCODING = "utf-8"
 

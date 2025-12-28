@@ -3,7 +3,6 @@ import traceback
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from importer.config import DATE_FORMAT_REPORT
 from importer.logger import logger
 
 
@@ -63,6 +62,8 @@ class ImportReport:
         }
 
     def _get_current_time_iso(self) -> str:
-        """Возвращает текущее время (UTC+3) в формате YYYY-MM-DDTHH:MM:SS."""
+        """
+        Возвращает текущее время (UTC+3) в формате ISO 8601.
+        """
         tz_plus_3 = timezone(timedelta(hours=3))
-        return datetime.now(tz_plus_3).replace(microsecond=0).strftime(DATE_FORMAT_REPORT)
+        return datetime.now(tz_plus_3).replace(microsecond=0).isoformat()

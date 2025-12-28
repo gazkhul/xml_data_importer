@@ -2,7 +2,7 @@
 Description=Watch XML import directory
 
 [Path]
-PathExistsGlob=/ПУТЬ/ДО/ДИРЕКТОРИИ/ИМПОРТА/*.xml
+PathExistsGlob=/opt/xml_data_importer/*.xml
 
 [Install]
 WantedBy=multi-user.target

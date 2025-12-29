@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date, datetime
 from pathlib import Path
 from typing import Iterator
@@ -23,15 +25,11 @@ def parse_bool(text: str | None, line: int, field_name: str = "unknown") -> int:
 
     clean_text = text.strip().lower()
 
-    match clean_text:
-        case "true":
-            return 1
-        case "false":
-            return 0
-        case _:
-            raise ValueError(
-                f"Некорректное значение '{field_name}' в строке #{line}: '{text}'. Ожидается true/false."
-            )
+    if clean_text == "true":
+        return 1
+    if clean_text == "false":
+        return 0
+    raise ValueError(f"Некорректное значение '{field_name}' в строке #{line}: '{text}'. Ожидается true/false.")
 
 def iter_lines(xml_path: Path) -> Iterator[Element]:
     """

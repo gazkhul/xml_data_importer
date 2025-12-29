@@ -5,7 +5,7 @@ from importer.config import DB_CONFIG
 from importer.logger import logger
 
 
-def connect_db() -> mariadb.Connection:
+def connect_db():
     """
     Устанавливает соединение с MariaDB/MySQL, используя настройки из DB_CONFIG.
     Завершает работу приложения в случае критической ошибки подключения.
@@ -16,10 +16,9 @@ def connect_db() -> mariadb.Connection:
         return conn
     except mariadb.Error as e:
         logger.error(f"Ошибка подключения к базе данных: {e}.")
-        # sys.exit(1)
         raise
 
-def close_db(conn: mariadb.Connection) -> None:
+def close_db(conn) -> None:
     """Закрывает соединение с базой данных."""
     try:
         conn.close()

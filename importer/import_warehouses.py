@@ -1,8 +1,10 @@
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import TypeAlias
+from typing import Optional
 from xml.etree.ElementTree import ParseError
+
+from typing_extensions import TypeAlias
 
 from importer.config import FILE_WAREHOUSES, SQL_CONFIG
 from importer.logger import logger
@@ -15,11 +17,11 @@ WarehouseKey: TypeAlias = tuple[str, str]
 WarehouseRow: TypeAlias = tuple[
     str,          # product_id_1c
     str,          # stock_id_1c
-    date | None,  # edit_date
+    Optional[date],  # edit_date
     Decimal,      # price
     int,          # it_rrc
-    date | None,  # change_price_date
-    date | None,  # load_price_date
+    Optional[date],  # change_price_date
+    Optional[date],  # load_price_date
     int,          # arch
 ]
 

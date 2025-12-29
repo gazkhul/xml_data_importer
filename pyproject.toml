@@ -3,11 +3,12 @@ name = "xml-data-importer"
 version = "0.1.0"
 description = "1C data to mariadb importer"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
     "loguru>=0.7.3",
-    "mariadb>=1.1.14",
+    "mariadb>=1.0.11",
     "python-dotenv>=1.2.1",
+    "typing-extensions>=4.15.0",
 ]
 
 [dependency-groups]

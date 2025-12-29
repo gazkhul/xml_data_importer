@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import TypeAlias
 from xml.etree.ElementTree import ParseError
+
+from typing_extensions import TypeAlias
 
 from importer.config import FILE_PROD_DOP, SQL_CONFIG
 from importer.logger import logger

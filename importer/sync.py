@@ -55,14 +55,17 @@ def sync_data(
         cursor.execute(_load_sql(insert_sql_path))
         inserted_count = max(cursor.rowcount, 0)
 
-        logger.info(
-            f"Синхронизация '{target_table}' завершена: inserted={inserted_count}, updated={updated_count}."
-        )
 
         if delete_flag:
             cursor.execute(_load_sql(delete_sql_path))
             deleted_count = max(cursor.rowcount, 0)
-            logger.info(f"Удалено строк: {deleted_count}.")
+
+        logger.info(
+            f"Синхронизация '{target_table}': "
+            f"inserted={inserted_count}, "
+            f"updated={updated_count}, "
+            f"deleted={deleted_count}."
+        )
 
         conn.commit()
         logger.success("Транзакция зафиксирована.")

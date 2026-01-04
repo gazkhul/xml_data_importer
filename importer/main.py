@@ -47,10 +47,10 @@ def main():
         report = ImportReport(file_path.name)
 
         try:
-            logger.info(f"Начат разбор файла: {file_path.name}")
+            logger.info(f"Начат разбор файла: '{file_path.name}'")
 
             if file_path.name not in [FILE_PROD_DOP, FILE_WAREHOUSES]:
-                logger.warning(f"Неизвестный XML-файл: {file_path.name}")
+                logger.warning(f"Неизвестный XML-файл: '{file_path.name}'")
                 dest_path = UNKNOWN_DIR / file_path.name
                 shutil.move(str(file_path), str(dest_path))
                 logger.warning(f"Файл перемещен в unknown: {dest_path}")
@@ -65,13 +65,13 @@ def main():
 
             if report.status == "success":
                 file_path.unlink()
-                logger.info(f"Файл синхронизирован и удален: {file_path.name}")
+                logger.info(f"Файл синхронизирован и удален: '{file_path.name}'")
             else:
                 logger.warning(f"Файл синхронизирован с ошибками ({report.status}). Перемещение в failed.")
                 raise RuntimeError(f"Импорт завершен со статусом: {report.status}")
 
         except Exception as e:
-            logger.warning(f"Файл {file_path.name} требует проверки. Статус: {report.status}")
+            logger.warning(f"Файл '{file_path.name}' требует проверки. Статус: {report.status}")
             if report.status == "pending":
                 report.set_failed(e)
 
@@ -82,7 +82,7 @@ def main():
                 shutil.move(str(file_path), str(dest_path))
                 logger.warning(f"Файл перемещен в failed: {dest_path}")
             except OSError as move_err:
-                logger.error(f"Не удалось переместить файл {file_path.name}: {move_err}")
+                logger.error(f"Не удалось переместить файл '{file_path.name}': {move_err}")
 
         all_reports.append(report.to_dict())
 

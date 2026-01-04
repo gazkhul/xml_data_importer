@@ -1,18 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<info_update date="2025-12-31T03:01:15">
+<info_update date="2026-01-04T19:30:11">
   <settings>
     <delete>true</delete>
   </settings>
   <lines>
-    <line product_id_1c="3ff05d78-a206-491f-9219-e45703570bec" it_ya="false" />
-    <line product_id_1c="a5e23114-6a3e-4523-999a-a82be0f6b677" it_ya="true" />
-    <line product_id_1c="ed1c58d5-3498-44e3-8ce6-d439b60a0cce" it_ya="false" />
-    <line product_id_1c="3bb857cf-d653-4eb8-8d20-95500aea23d3" it_ya="true" />
-    <line product_id_1c="0718e011-2590-4095-a8c5-39924115f5d9" it_ya="true" />
-    <line product_id_1c="4fb3da35-6517-48da-b9ce-3bc21c5db10b" it_ya="false" />
-    <line product_id_1c="efcf7718-f448-454d-b492-83fc4916586e" it_ya="false" />
-    <line product_id_1c="1f0bba81-7e09-45bf-b286-3784bcd41fbf" it_ya="true" />
-    <line product_id_1c="c55b9e1b-8b21-40e9-b205-eb79763991a5" it_ya="false" />
-    <line product_id_1c="e32f210f-5706-4dfa-9e94-f0ecdbadbcb6" it_ya="false" />
+    <line product_id_1c="64aeea9e-151e-48fe-b7b1-e2f6b599d80d" it_ya="true" />
+    <line product_id_1c="4de1f91b-ab24-4781-807e-7a1645b3dbc4" it_ya="true" />
+    <line product_id_1c="58830a68-8896-4e22-bb21-608bf1033d78" it_ya="false" />
   </lines>
 </info_update>

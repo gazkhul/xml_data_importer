@@ -1,5 +1,5 @@
 from datetime import date
-from decimal import InvalidOperation
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Optional
 from xml.etree.ElementTree import ParseError
@@ -18,13 +18,11 @@ from importer.xml_utils import (
 )
 
 
-# WarehouseKey: TypeAlias = tuple[str, str]
-
 WarehouseRow: TypeAlias = tuple[
     str,             # product_id_1c
     str,             # stock_id_1c
     Optional[date],  # edit_date
-    int,             # price
+    Decimal,         # price
     int,             # it_rrc
     Optional[date],  # change_price_date
     Optional[date],  # load_price_date
@@ -37,7 +35,6 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
     Парсит warehouses.xml.
     """
     rows: list[WarehouseRow] = []
-    # keys_in_file: set[WarehouseKey] = set()
     total_lines = 4  # смещение на заголовок XML
 
     for line in iter_lines(xml_path):
@@ -57,7 +54,7 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
                 raise ValueError(f"Отсутствует атрибут 'price' в строке #{total_lines}.")
 
             try:
-                price = int(raw_price)
+                price = Decimal(raw_price)
             except InvalidOperation as e:
                 raise ValueError(f"Некорректное значение 'price': '{raw_price}'.") from e
 
@@ -103,8 +100,6 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
                     arch,
                 )
             )
-
-            # keys_in_file.add((product_id_1c, stock_id_1c))
 
         except ParseError as e:
             raise ValueError(f"Критическая ошибка структуры XML: {e}") from e
@@ -155,4 +150,4 @@ def import_warehouses(xml_path: Path, report: ImportReport) -> None:
         rows_deleted=sync_results["rows_deleted"],
     )
 
-    logger.success(f"Импорт {FILE_WAREHOUSES} завершён.")
+    logger.success(f"Импорт '{FILE_WAREHOUSES}' завершён.")

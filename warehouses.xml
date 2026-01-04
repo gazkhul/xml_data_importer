@@ -1,18 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<info_update date="2025-12-31T03:01:15">
+<info_update date="2026-01-04T19:30:11">
   <settings>
     <delete>false</delete>
   </settings>
   <lines>
-    <line product_id_1c="daf9b46f-8665-46b6-9b56-0d74bf6c4bff" stock_id_1c="0d9d24ba-4f97-4dfe-8b0a-8b221e4b847b" edit_date="2025-12-31T03:01:15" it_rrc="true" load_price_date="2023-08-16T22:07:59" change_price_date="2024-01-04T02:44:01" arch="true" price="13877" />
-    <line product_id_1c="9c12c7f5-5e04-4481-a236-58e8d6cd8e9c" stock_id_1c="21c5f440-9c54-4758-bd5b-3b46a3ed44e5" edit_date="2025-12-31T03:01:15" it_rrc="true" load_price_date="2025-12-01T01:45:39" change_price_date="2023-11-28T18:10:01" arch="false" price="12842" />
-    <line product_id_1c="acde564e-3304-4c7a-9623-af5ed245424d" stock_id_1c="73f8e858-8b25-4ef9-8266-8ed4728f5020" edit_date="2025-12-31T03:01:14" it_rrc="true" load_price_date="2024-04-13T09:50:29" change_price_date="2025-05-09T13:44:41" arch="true" price="46285" />
-    <line product_id_1c="b87ce055-09e4-4c9b-911b-52f5e1224f88" stock_id_1c="e16de47e-b757-4e18-abf4-24cea5cb3bc3" edit_date="2025-12-31T03:01:15" it_rrc="false" load_price_date="2024-05-17T15:03:28" change_price_date="2025-12-24T18:38:07" arch="false" price="9639" />
-    <line product_id_1c="2eb3fde4-f390-407f-915e-f615e14752dc" stock_id_1c="1e5f55cc-69b2-4096-8aac-1fb948fea3f6" edit_date="2025-12-31T03:01:15" it_rrc="false" load_price_date="2022-12-28T20:49:46" change_price_date="2024-09-07T05:01:37" arch="true" price="46468" />
-    <line product_id_1c="bc443612-7b86-4189-a6ad-982e906c485b" stock_id_1c="cc8fa52f-e956-47d0-9912-19bbddad83b1" edit_date="2025-12-31T03:01:15" it_rrc="false" load_price_date="2023-08-27T16:30:35" change_price_date="2024-01-12T21:44:16" arch="true" price="23074" />
-    <line product_id_1c="61eb58ba-7cf3-49ec-99f4-b978b72acc31" stock_id_1c="48acc6cb-a215-483e-b555-56e7401eb02a" edit_date="2025-12-31T03:01:15" it_rrc="false" load_price_date="2024-03-20T11:42:05" change_price_date="2022-11-19T21:24:03" arch="false" price="16750" />
-    <line product_id_1c="2db1a550-4c13-4f25-82ba-713919b991c6" stock_id_1c="21ba2343-3a6a-4013-8733-cbc752396d48" edit_date="2025-12-31T03:01:25" it_rrc="true" load_price_date="2024-06-29T17:35:29" change_price_date="2024-08-03T09:05:14" arch="false" price="13276" />
-    <line product_id_1c="62c72d49-4722-4459-80ce-483aedd55d7d" stock_id_1c="b0a2f77c-0edf-4f50-b744-7a7fa403ddfe" edit_date="2025-12-31T03:01:15" it_rrc="true" load_price_date="2025-12-11T10:36:38" change_price_date="2023-04-30T13:03:06" arch="false" price="23889" />
-    <line product_id_1c="5134ab36-0fdd-4845-8fb1-1234cb70d2d9" stock_id_1c="97962913-c428-4971-bc2d-9499ac308473" edit_date="2025-12-31T03:01:15" it_rrc="false" load_price_date="2025-04-14T15:59:01" change_price_date="2023-04-15T22:59:17" arch="true" price="40862" />
+    <line product_id_1c="f52c8824-df24-40a4-9abf-db0fd92b600e" stock_id_1c="551531b4-3a88-443f-823f-bafcb624199c" edit_date="2026-01-04T19:30:11" it_rrc="false" load_price_date="2023-05-29T19:39:26" change_price_date="2024-10-05T03:14:22" arch="false" price="16947.41" />
+    <line product_id_1c="425539e1-39af-40ae-853b-8372f9493e4c" stock_id_1c="9e16e4f6-804a-4d69-8a13-e863b1c8dff6" edit_date="2026-01-04T19:30:11" it_rrc="false" load_price_date="2024-10-25T19:26:18" change_price_date="2024-07-10T06:12:38" arch="true" price="47692.22" />
+    <line product_id_1c="6fc270ad-f572-487f-80dc-f96e0d474818" stock_id_1c="aa5133b5-82e5-42b6-92ba-f2b74bfea566" edit_date="2026-01-04T19:30:11" it_rrc="false" load_price_date="2024-01-04T02:38:44" change_price_date="2022-11-25T09:43:55" arch="true" price="25476" />
+    <line product_id_1c="6fc270ad-f572-487f-80dc-f96e0d474818" stock_id_1c="1a5133b5-82e5-42b6-92ba-f2b74bfea566" edit_date="2025-01-04T19:30:11" it_rrc="true" load_price_date="2024-01-04T02:38:44" change_price_date="2022-11-25T09:43:55" arch="false" price="25476" />
   </lines>
 </info_update>

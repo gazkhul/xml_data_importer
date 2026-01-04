@@ -10,25 +10,23 @@ from importer.sync import sync_data
 from importer.xml_utils import iter_lines, parse_bool, read_delete_flag
 
 
-# ProdDopKey: TypeAlias = tuple[str]
 ProdDopRow: TypeAlias = tuple[str, int]
 
 
 def _parse_prod_dop(xml_path: Path, report: ImportReport) -> list[ProdDopRow]:
     """
     Парсит prod_dop.xml.
-    Ожидается <line> с атрибутами product_id_1c и it_ya.
+    Ожидается <line> с атрибутами id_1c и it_ya.
     """
     rows: list[ProdDopRow] = []
-    # keys_in_file: set[ProdDopKey] = set()
     total_lines = 4  # смещение на заголовок XML
 
     for line in iter_lines(xml_path):
         total_lines += 1
 
         try:
-            product_id_1c = line.attrib.get("product_id_1c")
-            if not product_id_1c:
+            id_1c = line.attrib.get("id_1c")
+            if not id_1c:
                 raise ValueError(f"Отсутствует id_1c в строке #{total_lines}.")
 
             it_ya = parse_bool(
@@ -37,8 +35,7 @@ def _parse_prod_dop(xml_path: Path, report: ImportReport) -> list[ProdDopRow]:
                 "it_ya",
             )
 
-            rows.append((product_id_1c, it_ya))
-            # keys_in_file.add((product_id_1c,))
+            rows.append((id_1c, it_ya))
 
         except ParseError as e:
             raise ValueError(f"Критическая ошибка структуры XML: {e}") from e
@@ -89,4 +86,4 @@ def import_prod_dop(xml_path: Path, report: ImportReport) -> None:
         rows_deleted=sync_results["rows_deleted"],
     )
 
-    logger.success(f"Импорт {FILE_PROD_DOP} завершён.")
+    logger.success(f"Импорт '{FILE_PROD_DOP}' завершён.")

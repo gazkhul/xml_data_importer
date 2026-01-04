@@ -20,6 +20,9 @@ FILE_WAREHOUSES = "warehouses.xml"
 REPORT_FILE_NAME = "report.json"
 LOG_FILE_NAME = "xml_importer.log"
 
+TABLE_PROD_DROP="tbl_prod_dop"
+TABLE_WAREHOUSES="warehouses"
+
 DB_CONFIG = {
     "host": ENV_FILE.get("HOST"),
     "port": int(ENV_FILE.get("PORT") or 3306),
@@ -30,17 +33,22 @@ DB_CONFIG = {
 }
 
 SQL_CONFIG = {
-    "prod_dop": {
-        "upsert": "prod_dop/upsert.sql",
+    TABLE_PROD_DROP: {
         "tmp_table": "prod_dop/tmp_table.sql",
+        "insert": "prod_dop/insert.sql",
+        "update": "prod_dop/update.sql",
         "delete": "prod_dop/delete_missing.sql",
-        "insert_keys_stmt": "INSERT INTO tmp_prod_dop_ids (id_1c) VALUES (%s)"
+        "target_table": TABLE_PROD_DROP,
+        "columns_list": "id_1c, it_ya",
     },
-    "warehouses": {
-        "upsert": "warehouses/upsert.sql",
+    TABLE_WAREHOUSES: {
         "tmp_table": "warehouses/tmp_table.sql",
+        "insert": "warehouses/insert.sql",
+        "update": "warehouses/update.sql",
         "delete": "warehouses/delete_missing.sql",
-        "insert_keys_stmt": "INSERT INTO tmp_warehouses_keys (product_id_1c, stock_id_1c) VALUES (%s, %s)"
+        "target_table": TABLE_WAREHOUSES,
+        "columns_list":
+            "product_id_1c, stock_id_1c, edit_date, price, it_rrc, change_price_date, load_price_date, arch",
     }
 }
 

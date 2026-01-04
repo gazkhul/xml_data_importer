@@ -10,32 +10,38 @@ from importer.sync import sync_data
 from importer.xml_utils import iter_lines, parse_bool, read_delete_flag
 
 
+# ProdDopKey: TypeAlias = tuple[str]
 ProdDopRow: TypeAlias = tuple[str, int]
 
-def _parse_prod_dop(xml_path: Path, report: ImportReport) -> tuple[list[ProdDopRow], set[tuple[str]]]:
+
+def _parse_prod_dop(xml_path: Path, report: ImportReport) -> list[ProdDopRow]:
     """
-    Парсит XML-файл построчно, валидирует данные и собирает статистику ошибок.
-    Возвращает список подготовленных строк для БД и множество ключей (id_1c) для синхронизации.
+    Парсит prod_dop.xml.
+    Ожидается <line> с атрибутами product_id_1c и it_ya.
     """
     rows: list[ProdDopRow] = []
-    keys_in_file: set[tuple[str]] = set()
-    total_lines = 4 # Смещение на заголовок
+    # keys_in_file: set[ProdDopKey] = set()
+    total_lines = 4  # смещение на заголовок XML
 
     for line in iter_lines(xml_path):
         total_lines += 1
 
         try:
-            id_1c = line.attrib.get("id_1c")
-
-            if not id_1c:
+            product_id_1c = line.attrib.get("product_id_1c")
+            if not product_id_1c:
                 raise ValueError(f"Отсутствует id_1c в строке #{total_lines}.")
 
-            it_ya = parse_bool(line.findtext("it_ya"), total_lines, field_name="it_ya")
-            rows.append((id_1c, it_ya))
-            keys_in_file.add((id_1c,))
+            it_ya = parse_bool(
+                line.attrib.get("it_ya"),
+                total_lines,
+                "it_ya",
+            )
+
+            rows.append((product_id_1c, it_ya))
+            # keys_in_file.add((product_id_1c,))
 
         except ParseError as e:
-            raise ValueError (f"Критическая ошибка структуры XML: {e}") from e
+            raise ValueError(f"Критическая ошибка структуры XML: {e}") from e
         except ValueError as e:
             report.add_row_error(total_lines, str(e))
             continue
@@ -44,38 +50,43 @@ def _parse_prod_dop(xml_path: Path, report: ImportReport) -> tuple[list[ProdDopR
             continue
 
     report.set_rows_parsed(len(rows))
-    return rows, keys_in_file
+    return rows
+
 
 def import_prod_dop(xml_path: Path, report: ImportReport) -> None:
     """
-    Модуль для импорта данных из prod_dop.xml.
-    Обрабатывает файл, извлекает ID продукта и флаг (it_ya),
-    после чего обновляет основную таблицу и удаляет устаревшие записи.
+    Импорт данных из prod_dop.xml.
     """
-    logger.info(f"Импорт {FILE_PROD_DOP}: {xml_path}")
+    logger.info(f"Импорт файла '{FILE_PROD_DOP}': {xml_path}")
 
-    delete_flag: bool = read_delete_flag(xml_path)
-    logger.info(f"Флаг 'delete': {delete_flag}")
+    delete_flag = read_delete_flag(xml_path)
+    logger.info(f"Параметры импорта: delete={delete_flag}")
 
-    rows, keys_in_file = _parse_prod_dop(xml_path, report)
+    rows = _parse_prod_dop(xml_path, report)
 
     if not rows:
-        logger.warning(f"В файле {xml_path.name} не найдено валидных данных для импорта.")
+        logger.warning(f"В файле {xml_path.name} нет валидных строк для импорта.")
         return
 
-    row_count = len(rows)
-    logger.info(f"Готово к загрузке строк: {row_count}")
+    logger.info(f"Подготовлено строк к загрузке: count={len(rows)}")
 
-    conf = SQL_CONFIG["prod_dop"]
+    conf = SQL_CONFIG["tbl_prod_dop"]
 
-    sync_data(
+    sync_results = sync_data(
         rows=rows,
-        keys=keys_in_file,
-        upsert_sql_path=conf["upsert"],
         delete_flag=delete_flag,
+        target_table=conf["target_table"],
+        columns_list=conf["columns_list"],
         tmp_table_sql_path=conf["tmp_table"],
+        insert_sql_path=conf["insert"],
+        update_sql_path=conf["update"],
         delete_sql_path=conf["delete"],
-        insert_tmp_key_sql=conf["insert_keys_stmt"]
+    )
+
+    report.set_sync_results(
+        rows_inserted=sync_results["rows_inserted"],
+        rows_updated=sync_results["rows_updated"],
+        rows_deleted=sync_results["rows_deleted"],
     )
 
     logger.success(f"Импорт {FILE_PROD_DOP} завершён.")

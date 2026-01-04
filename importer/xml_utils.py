@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Iterator
 from xml.etree.ElementTree import Element, iterparse
 
-from importer.config import DATE_FORMAT_XML
-
 
 def get_xml_files(watch_dir: str | Path) -> list[Path]:
     """
@@ -17,8 +15,7 @@ def get_xml_files(watch_dir: str | Path) -> list[Path]:
 
 def parse_bool(text: str | None, line: int, field_name: str = "unknown") -> int:
     """
-    Преобразует текстовое значение в 0/1 по правилу true -> 1, false -> 0».
-    Выбрасывает ValueError, если значение не 'true' и не 'false'.
+    Парсит boolean из строки 'true'/'false' в 1/0.
     """
     if not text:
         raise ValueError(f"Отсутствует значение '{field_name}' в строке #{line}.")
@@ -33,9 +30,7 @@ def parse_bool(text: str | None, line: int, field_name: str = "unknown") -> int:
 
 def iter_lines(xml_path: Path) -> Iterator[Element]:
     """
-    Итератор по элементам <line> в XML-файле.
-    Реализован через потоковый парсинг (iterparse), чтобы не загружать весь XML в память.
-    После выдачи элемента выполняется elem.clear() для снижения потребления памяти.
+    Потоковый итератор по элементам <line>.
     """
     context = iterparse(xml_path, events=("end",))
     for _event, elem in context:
@@ -56,11 +51,9 @@ def read_delete_flag(xml_path: Path) -> bool:
         elem.clear()
     return False
 
-def parse_date(text: str | None, line: int, field_name: str = "unknown") -> date | None:
+def parse_datetime_to_date(text: str | None, line: int, field_name: str = "unknown") -> date | None:
     """
-    Парсит дату в формате YYYY-MM-DD.
-    Возвращает объект date или None (если текст пустой).
-    Выбрасывает ValueError, если формат некорректен.
+    Парсит ISO-datetime (YYYY-MM-DDTHH:MM:SS) и возвращает date.
     """
     if not text:
         return None
@@ -71,7 +64,7 @@ def parse_date(text: str | None, line: int, field_name: str = "unknown") -> date
         return None
 
     try:
-        return datetime.strptime(clean_text, DATE_FORMAT_XML).date()
+        return datetime.fromisoformat(clean_text).date()
     except ValueError as e:
-        msg = f"Некорректный формат даты в строке #{line} в поле '{field_name}': '{text}'. Ожидается YYYY-MM-DD."
-        raise ValueError(msg) from e
+        raise ValueError(f"Некорректный формат даты в строке #{line} в поле '{field_name}': '{text}'."
+                         "Ожидается ISO-datetime (YYYY-MM-DDTHH:MM:SS).") from e

@@ -12,7 +12,9 @@ def connect_db():
     """
     try:
         conn = mariadb.connect(**DB_CONFIG)
-        logger.info("Подключение к базе данных выполнено успешно.")
+        logger.info(
+            f"Подключение к БД установлено: host={DB_CONFIG['host']}, db={DB_CONFIG['database']}"
+        )
         return conn
     except mariadb.Error as e:
         logger.error(f"Ошибка подключения к базе данных: {e}.")
@@ -22,7 +24,7 @@ def close_db(conn) -> None:
     """Закрывает соединение с базой данных."""
     try:
         conn.close()
-        logger.info("Соединение с базой данных закрыто.")
+        logger.info(f"Соединение с БД закрыто: host={DB_CONFIG['host']}, db={DB_CONFIG['database']}")
     except mariadb.Error as e:
         logger.error(f"Ошибка при закрытии соединения с базой данных: {e}")
 

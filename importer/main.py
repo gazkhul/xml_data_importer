@@ -38,7 +38,7 @@ def main():
         return
 
     if not check_db_connection():
-        logger.critical("Нет связи с БД. Обработка файлов остановлена.")
+        logger.critical("Нет связи с БД. Синхронизация таблиц остановлена.")
         return
 
     all_reports = []
@@ -47,7 +47,7 @@ def main():
         report = ImportReport(file_path.name)
 
         try:
-            logger.info(f"Обработка файла: {file_path.name}")
+            logger.info(f"Начат разбор файла: {file_path.name}")
 
             if file_path.name not in [FILE_PROD_DOP, FILE_WAREHOUSES]:
                 logger.warning(f"Неизвестный XML-файл: {file_path.name}")
@@ -65,9 +65,9 @@ def main():
 
             if report.status == "success":
                 file_path.unlink()
-                logger.info(f"Файл обработан и удален: {file_path.name}")
+                logger.info(f"Файл синхронизирован и удален: {file_path.name}")
             else:
-                logger.warning(f"Файл обработан с ошибками ({report.status}). Перемещение в failed.")
+                logger.warning(f"Файл синхронизирован с ошибками ({report.status}). Перемещение в failed.")
                 raise RuntimeError(f"Импорт завершен со статусом: {report.status}")
 
         except Exception as e:

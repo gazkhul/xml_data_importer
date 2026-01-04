@@ -1,9 +1,10 @@
-CREATE TABLE tbl_prod_dop (
+CREATE TABLE IF NOT EXISTS tbl_prod_dop (
     id_1c VARCHAR(36) NOT NULL,
-    it_ya TINYINT(1) DEFAULT 0,
+    it_ya TINYINT(1) NOT NULL DEFAULT 0,
     UNIQUE KEY uniq_tbl_prod_dop_id_1c (id_1c)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-CREATE TABLE warehouses (
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS warehouses (
     stock_id_1c VARCHAR(36) NOT NULL,
     product_id_1c VARCHAR(36) NOT NULL,
     edit_date DATE DEFAULT NULL,
@@ -14,4 +15,4 @@ CREATE TABLE warehouses (
     arch TINYINT(1) DEFAULT NULL,
     change_rrc_date DATE DEFAULT NULL,
     UNIQUE KEY uniq_warehouses_product_id_1c_stock_id_1c (product_id_1c, stock_id_1c)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

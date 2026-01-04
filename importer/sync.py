@@ -1,4 +1,4 @@
-from typing import Any, Iterable
+from typing import Any
 
 from mariadb import Error as mariadb_error
 
@@ -18,40 +18,60 @@ def _load_sql(relative_path: str) -> str:
 
 def sync_data(
     rows: list[Any],
-    keys: Iterable[Any],
     delete_flag: bool,
-    upsert_sql_path: str,
+    target_table: str,
+    columns_list: str,
     tmp_table_sql_path: str,
+    insert_sql_path: str,
+    update_sql_path: str,
     delete_sql_path: str,
-    insert_tmp_key_sql: str,
-) -> None:
+) -> dict[str, int]:
     """
-    Универсальная функция синхронизации данных (Upsert + Delete Missing).
+    Синхронизирует данные с целевой таблицей через временную:
+    UPDATE для изменённых строк, INSERT для новых и опциональный DELETE для отсутствующих.
+    Возвращает количество новых, обновлённых и удалённых записей.
     """
     conn = connect_db()
     cursor = conn.cursor()
 
+    inserted_count = 0
+    updated_count = 0
+    deleted_count = 0
+
     try:
-        # --- UPSERT ---
-        upsert_sql = _load_sql(upsert_sql_path)
-        cursor.executemany(upsert_sql, rows)
-        logger.info(f"Загружено записей (вставка/обновление): {cursor.rowcount}")
+        cursor.execute(_load_sql(tmp_table_sql_path))
 
-        # --- DELETE ---
+        placeholders = ", ".join(["%s"] * len(rows[0]))
+        insert_tmp_sql = f"""
+            INSERT INTO tmp_{target_table}
+            ({columns_list})
+            VALUES ({placeholders})
+        """
+        cursor.executemany(insert_tmp_sql, rows)
+
+        cursor.execute(_load_sql(update_sql_path))
+        updated_count = max(cursor.rowcount, 0)
+
+        cursor.execute(_load_sql(insert_sql_path))
+        inserted_count = max(cursor.rowcount, 0)
+
+        logger.info(
+            f"Синхронизация '{target_table}' завершена: inserted={inserted_count}, updated={updated_count}."
+        )
+
         if delete_flag:
-            logger.info("Удаление записей, отсутствующих в XML-файле.")
-
-            tmp_table_sql = _load_sql(tmp_table_sql_path)
-            cursor.execute(tmp_table_sql)
-
-            cursor.executemany(insert_tmp_key_sql, list(keys))
-
-            delete_sql = _load_sql(delete_sql_path)
-            cursor.execute(delete_sql)
-            logger.info(f"Удалено строк: {cursor.rowcount}.")
+            cursor.execute(_load_sql(delete_sql_path))
+            deleted_count = max(cursor.rowcount, 0)
+            logger.info(f"Удалено строк: {deleted_count}.")
 
         conn.commit()
         logger.success("Транзакция зафиксирована.")
+
+        return {
+            "rows_inserted": inserted_count,
+            "rows_updated": updated_count,
+            "rows_deleted": deleted_count,
+        }
 
     except mariadb_error as e:
         conn.rollback()

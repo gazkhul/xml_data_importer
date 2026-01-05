@@ -1,5 +1,5 @@
 CREATE TEMPORARY TABLE tmp_tbl_prod_dop (
     id_1c VARCHAR(36) NOT NULL,
-    it_ya TINYINT(1) NOT NULL,
+    it_ya TINYINT(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (id_1c)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

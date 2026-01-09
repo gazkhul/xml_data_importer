@@ -7,10 +7,10 @@ from importer.config import (
     FAILED_DIR,
     FILE_PROD_DOP,
     FILE_WAREHOUSES,
+    IMPORT_DIR,
     REPORT_DIR,
     REPORT_FILE_NAME,
     UNKNOWN_DIR,
-    WATCH_DIR,
 )
 from importer.db import check_db_connection
 from importer.import_prod_dop import import_prod_dop
@@ -27,14 +27,10 @@ def main():
     """
     logger.info("Запуск обработчика XML-файлов.")
 
-    if not WATCH_DIR:
-        logger.error("Ошибка конфигурации: не задана директория (WATCH_DIR).")
-        return
-
-    xml_files = get_xml_files(WATCH_DIR)
+    xml_files = get_xml_files(IMPORT_DIR)
 
     if not xml_files:
-        logger.warning(f"XML-файлы отсутствуют в директории {WATCH_DIR}.")
+        logger.warning(f"XML-файлы отсутствуют в директории {IMPORT_DIR}.")
         return
 
     if not check_db_connection():

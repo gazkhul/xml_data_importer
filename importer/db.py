@@ -1,19 +1,20 @@
+from dataclasses import asdict
 
 import mariadb
 
-from importer.config import DB_CONFIG
+from importer.config import DBConfig, app_db_config
 from importer.logger import logger
 
 
-def connect_db():
+def connect_db(config: DBConfig = app_db_config):
     """
     Устанавливает соединение с MariaDB/MySQL, используя настройки из DB_CONFIG.
     Завершает работу приложения в случае критической ошибки подключения.
     """
     try:
-        conn = mariadb.connect(**DB_CONFIG)
+        conn = mariadb.connect(**asdict(config))
         logger.info(
-            f"Подключение к БД установлено: host={DB_CONFIG['host']}, db={DB_CONFIG['database']}"
+            f"Подключение к БД установлено: db={config.database}, user={config.user}."
         )
         return conn
     except mariadb.Error as e:
@@ -24,14 +25,13 @@ def close_db(conn) -> None:
     """Закрывает соединение с базой данных."""
     try:
         conn.close()
-        logger.info(f"Соединение с БД закрыто: host={DB_CONFIG['host']}, db={DB_CONFIG['database']}")
+        logger.info("Соединение с БД закрыто.")
     except mariadb.Error as e:
         logger.error(f"Ошибка при закрытии соединения с базой данных: {e}")
 
 def check_db_connection() -> bool:
     """
-    Проверяет доступность базы данных.
-    Возвращает True, если подключение успешно, иначе False.
+    Проверяет доступность базы данных (использует дефолтный конфиг).
     """
     try:
         conn = connect_db()

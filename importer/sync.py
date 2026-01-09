@@ -2,7 +2,7 @@ from typing import Any
 
 from mariadb import Error as mariadb_error
 
-from importer.config import SQL_DIR
+from importer.config import SQL_DIR, app_db_config
 from importer.db import close_db, connect_db
 from importer.logger import logger
 
@@ -31,7 +31,7 @@ def sync_data(
     UPDATE для изменённых строк, INSERT для новых и опциональный DELETE для отсутствующих.
     Возвращает количество новых, обновлённых и удалённых записей.
     """
-    conn = connect_db()
+    conn = connect_db(config=app_db_config)
     cursor = conn.cursor()
 
     inserted_count = 0

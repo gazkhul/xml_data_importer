@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -6,8 +7,45 @@ from dotenv import dotenv_values
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = dotenv_values(BASE_DIR / ".env")
 
+@dataclass(frozen=True)
+class DBConfig:
+    host: str
+    port: int
+    user: str
+    password: str
+    database: str
+    autocommit: bool = False
+
+def _require(var_name: str) -> str:
+    value = ENV_FILE.get(var_name)
+    if not value:
+        raise ValueError(f"Отсутствует обязательная переменная окружения: {var_name}")
+    return value
+
+COMMON_DB_CONFIG = {
+    "host": _require("DB_HOST"),
+    "port": int(_require("DB_PORT")),
+    "database": _require("DB_NAME"),
+}
+
+admin_db_config = DBConfig(
+    **COMMON_DB_CONFIG,
+    user=_require("DB_ADMIN_USERNAME"),
+    password=_require("DB_ADMIN_PASSWORD"),
+    autocommit=False,
+)
+
+app_db_config = DBConfig(
+    **COMMON_DB_CONFIG,
+    user=_require("DB_APP_USERNAME"),
+    password=_require("DB_APP_PASSWORD"),
+    autocommit=False,
+)
+
+DB_APP_ALLOWED_HOST = _require("DB_APP_ALLOWED_HOST")
+
 TEST_DIR = BASE_DIR / "test_dir"
-WATCH_DIR = ENV_FILE.get("WATCH_DIR") or TEST_DIR
+IMPORT_DIR = _require("IMPORT_DIR")
 SQL_DIR = Path(__file__).resolve().parent / "sql"
 
 REPORT_DIR = BASE_DIR / "reports"
@@ -22,15 +60,6 @@ LOG_FILE_NAME = "xml_importer.log"
 
 TABLE_PROD_DROP="tbl_prod_dop"
 TABLE_WAREHOUSES="warehouses"
-
-DB_CONFIG = {
-    "host": ENV_FILE.get("HOST"),
-    "port": int(ENV_FILE.get("PORT") or 3306),
-    "user": ENV_FILE.get("ADMIN_USER"),
-    "password": ENV_FILE.get("ADMIN_PASSWORD"),
-    "database": ENV_FILE.get("DATABASE"),
-    "autocommit": False,
-}
 
 SQL_CONFIG = {
     TABLE_PROD_DROP: {

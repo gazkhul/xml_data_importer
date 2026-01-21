@@ -6,6 +6,7 @@ from importer.config import (
     DATE_FORMAT_LOG,
     FAILED_DIR,
     FILE_PROD_DOP,
+    FILE_STOCK_PRICES,
     FILE_WAREHOUSES,
     IMPORT_DIR,
     REPORT_DIR,
@@ -14,6 +15,7 @@ from importer.config import (
 )
 from importer.db import check_db_connection
 from importer.import_prod_dop import import_prod_dop
+from importer.import_stock_prices import import_stock_prices
 from importer.import_warehouses import import_warehouses
 from importer.logger import logger
 from importer.report import ImportReport
@@ -45,7 +47,7 @@ def main():
         try:
             logger.info(f"Начат разбор файла: '{file_path.name}'")
 
-            if file_path.name not in [FILE_PROD_DOP, FILE_WAREHOUSES]:
+            if file_path.name not in [FILE_PROD_DOP, FILE_WAREHOUSES, FILE_STOCK_PRICES]:
                 logger.warning(f"Неизвестный XML-файл: '{file_path.name}'")
                 dest_path = UNKNOWN_DIR / file_path.name
                 shutil.move(str(file_path), str(dest_path))
@@ -56,6 +58,8 @@ def main():
                 import_prod_dop(file_path, report)
             elif file_path.name == FILE_WAREHOUSES:
                 import_warehouses(file_path, report)
+            elif file_path.name == FILE_STOCK_PRICES:
+                import_stock_prices(file_path, report)
 
             report.set_success()
 

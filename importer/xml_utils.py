@@ -38,19 +38,6 @@ def iter_lines(xml_path: Path) -> Iterator[Element]:
             yield elem
             elem.clear()
 
-def read_delete_flag(xml_path: Path) -> bool:
-    """
-    True, если в XML встречается <delete>true</delete>, иначе False.
-    """
-    context = iterparse(str(xml_path), events=("end",))
-    for _event, elem in context:
-        if elem.tag == "delete":
-            val = (elem.text or "").strip().lower() == "true"
-            elem.clear()
-            return val
-        elem.clear()
-    return False
-
 def parse_datetime_to_date(text: str | None, line: int, field_name: str = "unknown") -> date | None:
     """
     Парсит ISO-datetime (YYYY-MM-DDTHH:MM:SS) и возвращает date.
@@ -68,3 +55,29 @@ def parse_datetime_to_date(text: str | None, line: int, field_name: str = "unkno
     except ValueError as e:
         raise ValueError(f"Некорректный формат даты в строке #{line} в поле '{field_name}': '{text}'."
                          "Ожидается ISO-datetime (YYYY-MM-DDTHH:MM:SS).") from e
+
+def _read_flag(xml_path: Path, tag_name: str) -> bool:
+    """
+    Функция для чтения boolean-флага из XML.
+    """
+    context = iterparse(str(xml_path), events=("end",))
+    for _, elem in context:
+        if elem.tag == tag_name:
+            val = (elem.text or "").strip().lower() == "true"
+            elem.clear()
+            return val
+        elem.clear()
+    return False
+
+def read_delete_flag(xml_path: Path) -> bool:
+    """
+    True, если в XML встречается <delete>true</delete>, иначе False.
+    """
+    return _read_flag(xml_path, "delete")
+
+def read_reset_flag(xml_path: Path) -> bool:
+    """
+    True, если в XML встречается <Reset>true</Reset>, иначе False.
+    """
+    return _read_flag(xml_path, "Reset")
+

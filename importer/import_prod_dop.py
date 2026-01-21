@@ -43,7 +43,7 @@ def _parse_prod_dop(xml_path: Path, report: ImportReport) -> list[ProdDopRow]:
             report.add_row_error(total_lines, str(e))
             continue
         except Exception as e:
-            report.add_row_error(total_lines, f"Неизвестная ошибка: {e}")
+            report.add_row_error(total_lines, f"Неизвестная ошибка парсинга: {e}")
             continue
 
     report.set_rows_parsed(len(rows))
@@ -56,8 +56,8 @@ def import_prod_dop(xml_path: Path, report: ImportReport) -> None:
     """
     logger.info(f"Импорт файла '{FILE_PROD_DOP}': {xml_path}")
 
-    delete_flag = read_delete_flag(xml_path)
-    logger.info(f"Параметры импорта: delete={delete_flag}")
+    is_delete = read_delete_flag(xml_path)
+    logger.info(f"Параметры импорта: delete={is_delete}")
 
     rows = _parse_prod_dop(xml_path, report)
 
@@ -71,7 +71,7 @@ def import_prod_dop(xml_path: Path, report: ImportReport) -> None:
 
     sync_results = sync_data(
         rows=rows,
-        delete_flag=delete_flag,
+        is_delete=is_delete,
         target_table=conf["target_table"],
         columns_list=conf["columns_list"],
         tmp_table_sql_path=conf["tmp_table"],

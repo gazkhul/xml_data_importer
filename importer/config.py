@@ -55,11 +55,13 @@ LOG_DIR = BASE_DIR / "log"
 
 FILE_PROD_DOP = "prod_dop.xml"
 FILE_WAREHOUSES = "warehouses.xml"
+FILE_STOCK_PRICES = "stock_prices.xml"
 REPORT_FILE_NAME = "report.json"
 LOG_FILE_NAME = "xml_importer.log"
 
 TABLE_PROD_DROP="tbl_prod_dop"
 TABLE_WAREHOUSES="warehouses"
+TABLE_STOCK_PRICES = "stock_prices"
 
 SQL_CONFIG = {
     TABLE_PROD_DROP: {
@@ -78,7 +80,25 @@ SQL_CONFIG = {
         "target_table": TABLE_WAREHOUSES,
         "columns_list":
             "product_id_1c, stock_id_1c, edit_date, price, it_rrc, change_price_date, load_price_date, arch",
-    }
+    },
+    TABLE_STOCK_PRICES: {
+        # временные таблицы
+        "tmp_products": "stock_prices/tmp_products.sql",
+        "tmp_stocks": "stock_prices/tmp_stocks.sql",
+        "insert_tmp_products": "stock_prices/insert_tmp_products.sql",
+        "insert_tmp_stocks": "stock_prices/insert_tmp_stocks.sql",
+        # этап 1 — обновление
+        "update_products": "stock_prices/update_shop_product.sql",
+        "update_skus": "stock_prices/update_shop_product_skus.sql",
+        "upsert_stocks": "stock_prices/upsert_shop_product_stocks.sql",
+        "delete_missing_stocks_per_product": "stock_prices/delete_missing_stocks_per_product.sql",
+        # этап 2 — reset
+        "reset_products": "stock_prices/reset_missing_products.sql",
+        "reset_skus": "stock_prices/reset_missing_skus.sql",
+        "delete_stocks_for_missing_products": "stock_prices/delete_stocks_for_missing_products.sql",
+        # служебное
+        "clean_logs": "stock_prices/clean_logs.sql",
+    },
 }
 
 LOGGER_CONFIG = {

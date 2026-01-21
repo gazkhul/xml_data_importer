@@ -62,6 +62,13 @@ LOG_FILE_NAME = "xml_importer.log"
 TABLE_PROD_DROP="tbl_prod_dop"
 TABLE_WAREHOUSES="warehouses"
 TABLE_STOCK_PRICES = "stock_prices"
+STOCK_PRICES_TABLES = [
+    "shop_product",
+    "shop_product_skus",
+    "shop_product_stocks",
+    "shop_stock",
+    "shop_product_stocks_log",
+]
 
 SQL_CONFIG = {
     TABLE_PROD_DROP: {

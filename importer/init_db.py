@@ -5,6 +5,7 @@ from mariadb import Error as mariadb_error
 from importer.config import (
     DB_APP_ALLOWED_HOST,
     SQL_DIR,
+    STOCK_PRICES_TABLES,
     TABLE_PROD_DROP,
     TABLE_WAREHOUSES,
     admin_db_config,
@@ -89,35 +90,46 @@ def configure_application_user(admin_cursor, tables: list) -> None:
 
     try:
         admin_cursor.execute(
-            f"CREATE USER IF NOT EXISTS '{app_db_username}'@'{allowed_host}' IDENTIFIED BY '{app_db_password}'"
+            f"CREATE USER IF NOT EXISTS '{app_db_username}'@'{allowed_host}' "
+            f"IDENTIFIED BY '{app_db_password}'"
         )
+
         for table in tables:
             admin_cursor.execute(
-                f"GRANT SELECT, INSERT, UPDATE, DELETE ON {app_db_name}.{table} TO '{app_db_username}'@'{allowed_host}'"
+                f"GRANT SELECT, INSERT, UPDATE, DELETE "
+                f"ON {app_db_name}.{table} "
+                f"TO '{app_db_username}'@'{allowed_host}'"
             )
+
         admin_cursor.execute(
-            f"GRANT CREATE TEMPORARY TABLES ON {app_db_name}.* TO '{app_db_username}'@'{allowed_host}'"
+            f"GRANT CREATE TEMPORARY TABLES ON {app_db_name}.* "
+            f"TO '{app_db_username}'@'{allowed_host}'"
         )
+
         admin_cursor.execute("FLUSH PRIVILEGES")
         logger.info(f"Пользователь '{app_db_username}'@'{allowed_host}' успешно настроен.")
     except mariadb_error as e:
         logger.error(f"Ошибка при настройке пользователя БД: {e}")
         raise
 
-def main():
+def main(init_schema: bool = False):
     """Основная функция инициализации базы данных."""
     logger.info("=== НАЧАЛО ИНИЦИАЛИЗАЦИИ БД ===")
 
     admin_connection = None
-    tables = [TABLE_PROD_DROP, TABLE_WAREHOUSES]
 
     try:
         admin_connection = connect_db(config=admin_db_config)
         admin_cursor = admin_connection.cursor()
 
-        backup_existing_tables(admin_cursor, tables)
-        apply_schema_from_file(admin_cursor)
-        configure_application_user(admin_cursor, tables)
+        tables = [TABLE_PROD_DROP, TABLE_WAREHOUSES]
+
+        if init_schema:
+            backup_existing_tables(admin_cursor, tables)
+            apply_schema_from_file(admin_cursor)
+
+        tables_for_app_user = tables + STOCK_PRICES_TABLES
+        configure_application_user(admin_cursor, tables_for_app_user)
 
         admin_connection.commit()
         logger.info("=== ИНИЦИАЛИЗАЦИЯ УСПЕШНО ЗАВЕРШЕНА ===")
@@ -131,4 +143,4 @@ def main():
             close_db(admin_connection)
 
 if __name__ == "__main__":
-    main()
+    main(init_schema=False)

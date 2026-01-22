@@ -30,9 +30,9 @@ def _parse_stock_prices(xml_path: Path, report: ImportReport) -> Tuple[List[Prod
     products_data: List[ProductRow] = []
     stocks_data: List[StockItem] = []
 
-    context = ET.iterparse(str(xml_path), events=("end",))
-
     try:
+        context = ET.iterparse(str(xml_path), events=("end",))
+
         for i, (_, elem) in enumerate(context):
             if elem.tag != "line":
                 continue
@@ -40,21 +40,21 @@ def _parse_stock_prices(xml_path: Path, report: ImportReport) -> Tuple[List[Prod
             try:
                 product_id_1c = elem.get("product_id_1c")
                 if not product_id_1c:
-                    report.add_row_error(i, "Отсутствует product_id_1c")
                     elem.clear()
-                    continue
+                    raise ValueError(f"Отсутствует обязательный атрибут 'product_id_1c' в строке #{i}.")
+
 
                 price_elem = elem.find("price")
-                price = Decimal(price_elem.text) if (price_elem is not None and price_elem.text) else Decimal("0")
+                price = Decimal(
+                    price_elem.text) if (price_elem is not None and price_elem.text) else Decimal("0")
+
+                total_qty_elem = elem.find("total_quantity")
+                total_qty = Decimal(
+                    total_qty_elem.text) if (total_qty_elem is not None and total_qty_elem.text) else Decimal("0")
 
                 stocks_elem = elem.find("stocks")
-                total_qty = Decimal("0")
 
                 if stocks_elem is not None:
-                    tq_elem = stocks_elem.find("total_quantity")
-                    if tq_elem is not None and tq_elem.text:
-                        total_qty = Decimal(tq_elem.text)
-
                     for stock in stocks_elem.findall("stock"):
                         stock_id_1c = stock.get("stock_id_1c")
                         qty_val = stock.get("Quantity")
@@ -66,8 +66,8 @@ def _parse_stock_prices(xml_path: Path, report: ImportReport) -> Tuple[List[Prod
                                     stock_id_1c=stock_id_1c,
                                     quantity=Decimal(qty_val)
                                 ))
-                            except Exception as e:
-                                report.add_row_error(i, f"Ошибка данных склада {stock_id_1c}: {e}")
+                            except ValueError as e:
+                                raise ValueError(f"Ошибка данных склада {stock_id_1c} в строке #{i}") from e
 
                 products_data.append(ProductRow(
                     product_id_1c=product_id_1c,
@@ -76,9 +76,10 @@ def _parse_stock_prices(xml_path: Path, report: ImportReport) -> Tuple[List[Prod
                 ))
 
             except ValueError as e:
-                report.add_row_error(i, f"Ошибка преобразования данных: {e}")
+                report.add_row_error(i, str(e))
+                continue
             except Exception as e:
-                report.add_row_error(i, f"Неизвестная ошибка строки: {e}")
+                report.add_row_error(i, f"Неизвестная ошибка парсинга: {e}")
             finally:
                 elem.clear()
 

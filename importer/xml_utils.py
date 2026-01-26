@@ -81,3 +81,14 @@ def read_reset_flag(xml_path: Path) -> bool:
     """
     return _read_flag(xml_path, "Reset")
 
+def get_info_update_date(xml_path: Path) -> str | None:
+    """
+    Читает атрибут date из тега <info_update>.
+    """
+    context = iterparse(str(xml_path), events=("start",))
+    for _, elem in context:
+        if elem.tag == "info_update":
+            date_val = elem.get("date")
+            elem.clear()
+            return date_val
+    return None

@@ -18,8 +18,8 @@ from importer.import_prod_dop import import_prod_dop
 from importer.import_stock_prices import import_stock_prices
 from importer.import_warehouses import import_warehouses
 from importer.logger import logger
-from importer.report import ImportReport
-from importer.xml_utils import get_xml_files
+from importer.report import ImportReport, filter_reports_by_retention, load_existing_reports
+from importer.xml_utils import get_info_update_date, get_xml_files
 
 
 def main():
@@ -30,7 +30,6 @@ def main():
     logger.info("Запуск обработчика XML-файлов.")
 
     xml_files = get_xml_files(IMPORT_DIR)
-
     if not xml_files:
         logger.warning(f"XML-файлы отсутствуют в директории {IMPORT_DIR}.")
         return
@@ -39,10 +38,16 @@ def main():
         logger.critical("Нет связи с БД. Синхронизация таблиц остановлена.")
         return
 
-    all_reports = []
+    # all_reports = []
+    report_file_path = REPORT_DIR / REPORT_FILE_NAME
+    history_reports = load_existing_reports(report_file_path)
 
     for file_path in xml_files:
         report = ImportReport(file_path.name)
+
+        xml_date = get_info_update_date(file_path)
+        if xml_date:
+            report.set_info_update_date(xml_date)
 
         try:
             logger.info(f"Начат разбор файла: '{file_path.name}'")
@@ -84,17 +89,25 @@ def main():
             except OSError as move_err:
                 logger.error(f"Не удалось переместить файл '{file_path.name}': {move_err}")
 
-        all_reports.append(report.to_dict())
+        # all_reports.append(report.to_dict())
+        history_reports.append(report.to_dict())
 
-    if all_reports:
-        report_file_path = REPORT_DIR / REPORT_FILE_NAME
+    history_reports = filter_reports_by_retention(history_reports, hours=24)
 
-        try:
-            with open(report_file_path, "w", encoding="utf-8") as f:
-                json.dump(all_reports, f, ensure_ascii=False, indent=2)
-            logger.info(f"Отчет обновлен: {report_file_path}")
-        except Exception as e:
-            logger.exception(f"Не удалось сохранить файл отчета. Ошибка: {e}")
+    # if all_reports:
+    #     try:
+    #         with open(report_file_path, "w", encoding="utf-8") as f:
+    #             json.dump(all_reports, f, ensure_ascii=False, indent=2)
+    #         logger.info(f"Отчет обновлен: {report_file_path}")
+    #     except Exception as e:
+    #         logger.exception(f"Не удалось сохранить файл отчета. Ошибка: {e}")
+
+    try:
+        with open(report_file_path, "w", encoding="utf-8") as f:
+            json.dump(history_reports, f, ensure_ascii=False, indent=2)
+        logger.info(f"Отчет сохранен: {report_file_path}")
+    except Exception as e:
+        logger.exception(f"Ошибка при сохранении отчета: {e}")
 
     logger.info("Работа обработчика завершена.")
 

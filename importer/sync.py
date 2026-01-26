@@ -7,6 +7,8 @@ from importer.db import close_db, connect_db
 from importer.logger import logger
 
 
+BATCH_SIZE = 10000
+
 def _load_sql(relative_path: str) -> str:
     """
     Загружает SQL из <PROJECT_ROOT>/importer/sql/**/*
@@ -28,8 +30,7 @@ def sync_data(
     ) -> dict[str, int]:
     """
     Синхронизирует данные с целевой таблицей через временную:
-    UPDATE для изменённых строк, INSERT для новых и опциональный DELETE для отсутствующих.
-    Возвращает количество новых, обновлённых и удалённых записей.
+    Возвращает статистику по операциям.
     """
     conn = connect_db(config=app_db_config)
     cursor = conn.cursor()
@@ -42,7 +43,6 @@ def sync_data(
 
     try:
         cursor.execute("START TRANSACTION")
-
         cursor.execute(_load_sql(tmp_table_sql_path))
 
         placeholders = ", ".join(["%s"] * len(rows[0]))
@@ -51,7 +51,10 @@ def sync_data(
             ({columns_list})
             VALUES ({placeholders})
         """
-        cursor.executemany(insert_tmp_sql, rows)
+
+        for i in range(0, len(rows), BATCH_SIZE):
+            batch = rows[i:i + BATCH_SIZE]
+            cursor.executemany(insert_tmp_sql, batch)
 
         cursor.execute(_load_sql(update_sql_path))
         stats["rows_updated"] += cursor.rowcount
@@ -112,9 +115,14 @@ def sync_stock_prices(
         cursor.execute(_load_sql(cfg["tmp_stocks"]))
 
         if products_tuples:
-            cursor.executemany(_load_sql(cfg["insert_tmp_products"]), products_tuples)
+            for i in range(0, len(products_tuples), BATCH_SIZE):
+                batch = products_tuples[i:i + BATCH_SIZE]
+                cursor.executemany(_load_sql(cfg["insert_tmp_products"]), batch)
+
         if stocks_tuples:
-            cursor.executemany(_load_sql(cfg["insert_tmp_stocks"]), stocks_tuples)
+            for i in range(0, len(stocks_tuples), BATCH_SIZE):
+                batch = stocks_tuples[i:i + BATCH_SIZE]
+                cursor.executemany(_load_sql(cfg["insert_tmp_stocks"]), batch)
 
         cursor.execute(_load_sql(cfg["update_products"]))
         # stats["updated_products"] = cursor.rowcount

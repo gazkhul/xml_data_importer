@@ -21,12 +21,7 @@ def _load_sql(relative_path: str) -> str:
 def sync_data(
         rows: list[Any],
         is_delete: bool,
-        target_table: str,
-        columns_list: str,
-        tmp_table_sql_path: str,
-        insert_sql_path: str,
-        update_sql_path: str,
-        delete_sql_path: str,
+        cfg: dict,
     ) -> dict[str, int]:
     """
     Синхронизирует данные с целевой таблицей через временную:
@@ -43,12 +38,12 @@ def sync_data(
 
     try:
         cursor.execute("START TRANSACTION")
-        cursor.execute(_load_sql(tmp_table_sql_path))
+        cursor.execute(_load_sql(cfg["tmp_table"]))
 
         placeholders = ", ".join(["%s"] * len(rows[0]))
         insert_tmp_sql = f"""
-            INSERT INTO tmp_{target_table}
-            ({columns_list})
+            INSERT INTO tmp_{cfg["target_table"]}
+            ({cfg["columns_list"]})
             VALUES ({placeholders})
         """
 
@@ -56,14 +51,14 @@ def sync_data(
             batch = rows[i:i + BATCH_SIZE]
             cursor.executemany(insert_tmp_sql, batch)
 
-        cursor.execute(_load_sql(update_sql_path))
+        cursor.execute(_load_sql(cfg["update"]))
         stats["db_updated"] += cursor.rowcount
 
-        cursor.execute(_load_sql(insert_sql_path))
+        cursor.execute(_load_sql(cfg["insert"]))
         stats["db_inserted"] += cursor.rowcount
 
         if is_delete:
-            cursor.execute(_load_sql(delete_sql_path))
+            cursor.execute(_load_sql(cfg["delete"]))
             stats["db_deleted"] += cursor.rowcount
 
         conn.commit()
@@ -86,7 +81,7 @@ def sync_data(
 def sync_stock_prices(
         products_data: List,
         stocks_data: List,
-        reset_flag: bool
+        is_reset: bool
     ) -> Dict[str, int]:
     cfg = SQL_CONFIG[TABLE_STOCK_PRICES]
 
@@ -134,7 +129,7 @@ def sync_stock_prices(
 
         cursor.execute(_load_sql(cfg["delete_missing_stocks_per_product"]))
 
-        if reset_flag:
+        if is_reset:
             cursor.execute(_load_sql(cfg["reset_products"]))
             stats["products_reset"] = cursor.rowcount
 

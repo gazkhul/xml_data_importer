@@ -2,11 +2,10 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Optional
-from xml.etree.ElementTree import ParseError
 
 from typing_extensions import TypeAlias
 
-from importer.config import FILE_WAREHOUSES, SQL_CONFIG
+from importer.config import FILE_WAREHOUSES, SQL_CONFIG, TABLE_WAREHOUSES
 from importer.logger import logger
 from importer.report import ImportReport
 from importer.sync import sync_data
@@ -35,23 +34,21 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
     Парсит warehouses.xml.
     """
     rows: list[WarehouseRow] = []
-    total_lines = 4  # смещение на заголовок XML
 
-    for line in iter_lines(xml_path):
-        total_lines += 1
+    for i, line in enumerate(iter_lines(xml_path), start=6):
 
         try:
             product_id_1c = line.attrib.get("product_id_1c")
             stock_id_1c = line.attrib.get("stock_id_1c")
 
             if not product_id_1c:
-                raise ValueError(f"Отсутствует обязательный атрибут 'product_id_1c' в строке #{total_lines}.")
+                raise ValueError(f"Отсутствует обязательный атрибут 'product_id_1c' в строке #{i}.")
             if not stock_id_1c:
-                raise ValueError(f"Отсутствует обязательный атрибут 'stock_id_1c' в строке #{total_lines}.")
+                raise ValueError(f"Отсутствует обязательный атрибут 'stock_id_1c' в строке #{i}.")
 
             raw_price = line.attrib.get("price")
             if raw_price is None:
-                raise ValueError(f"Отсутствует атрибут 'price' в строке #{total_lines}.")
+                raise ValueError(f"Отсутствует атрибут 'price' в строке #{i}.")
 
             try:
                 price = Decimal(raw_price)
@@ -60,31 +57,31 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
 
             edit_date = parse_datetime_to_date(
                 line.attrib.get("edit_date"),
-                total_lines,
+                i,
                 "edit_date",
             )
 
             load_price_date = parse_datetime_to_date(
                 line.attrib.get("load_price_date"),
-                total_lines,
+                i,
                 "load_price_date",
             )
 
             change_price_date = parse_datetime_to_date(
                 line.attrib.get("change_price_date"),
-                total_lines,
+                i,
                 "change_price_date",
             )
 
             it_rrc = parse_bool(
                 line.attrib.get("it_rrc"),
-                total_lines,
+                i,
                 "it_rrc",
             )
 
             arch = parse_bool(
                 line.attrib.get("arch"),
-                total_lines,
+                i,
                 "arch",
             )
 
@@ -101,13 +98,11 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
                 )
             )
 
-        except ParseError as e:
-            raise ValueError(f"Критическая ошибка структуры XML: {e}") from e
         except ValueError as e:
-            report.add_row_error(total_lines, str(e))
+            report.add_row_error(i, str(e))
             continue
         except Exception as e:
-            report.add_row_error(total_lines, f"Неизвестная ошибка парсинга: {e}")
+            report.add_row_error(i, f"Неизвестная ошибка парсинга: {e}")
             continue
 
     return rows
@@ -132,17 +127,10 @@ def import_warehouses(xml_path: Path, report: ImportReport) -> None:
 
     logger.info(f"Подготовлено строк к загрузке: count={len(rows)}")
 
-    conf = SQL_CONFIG["warehouses"]
-
     sync_results = sync_data(
         rows=rows,
         is_delete=is_delete,
-        target_table=conf["target_table"],
-        columns_list=conf["columns_list"],
-        tmp_table_sql_path=conf["tmp_table"],
-        insert_sql_path=conf["insert"],
-        update_sql_path=conf["update"],
-        delete_sql_path=conf["delete"],
+        cfg=SQL_CONFIG[TABLE_WAREHOUSES],
     )
 
     report.set_metrics({

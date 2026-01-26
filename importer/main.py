@@ -38,7 +38,6 @@ def main():
         logger.critical("Нет связи с БД. Синхронизация таблиц остановлена.")
         return
 
-    # all_reports = []
     report_file_path = REPORT_DIR / REPORT_FILE_NAME
     history_reports = load_existing_reports(report_file_path)
 
@@ -89,7 +88,6 @@ def main():
             except OSError as move_err:
                 logger.error(f"Не удалось переместить файл '{file_path.name}': {move_err}")
 
-        # all_reports.append(report.to_dict())
         history_reports.append(report.to_dict())
 
     history_reports = filter_reports_by_retention(history_reports, hours=24)

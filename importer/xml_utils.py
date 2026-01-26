@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from pathlib import Path
 from typing import Iterator
-from xml.etree.ElementTree import Element, iterparse
+from xml.etree.ElementTree import Element, ParseError, iterparse
 
 
 def get_xml_files(watch_dir: str | Path) -> list[Path]:
@@ -32,11 +32,14 @@ def iter_lines(xml_path: Path) -> Iterator[Element]:
     """
     Потоковый итератор по элементам <line>.
     """
-    context = iterparse(xml_path, events=("end",))
-    for _event, elem in context:
-        if elem.tag == "line":
-            yield elem
-            elem.clear()
+    try:
+        context = iterparse(xml_path, events=("end",))
+        for _, elem in context:
+            if elem.tag == "line":
+                yield elem
+                elem.clear()
+    except ParseError as e:
+        raise ParseError(f"Критическая ошибка структуры XML: {e}") from e
 
 def parse_datetime_to_date(text: str | None, line: int, field_name: str = "unknown") -> date | None:
     """

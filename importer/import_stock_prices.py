@@ -105,20 +105,24 @@ def import_stock_prices(xml_path: Path, report: ImportReport) -> None:
             logger.warning(f"В файле {xml_path.name} нет валидных данных для импорта.")
             return
 
-        report.set_rows_parsed(len(products_rows))
+        report.set_products_parsed(len(products_rows))
+
         logger.info(f"Подготовлено к загрузке: товаров={len(products_rows)}, записей складов={len(stocks_rows)}")
 
-        sync_stock_prices(
+        sync_results = sync_stock_prices(
             products_data=products_rows,
             stocks_data=stocks_rows,
             reset_flag=is_reset
         )
 
-        # report.set_sync_results(
-        #     rows_inserted=sync_results.get("inserted", 0),
-        #     rows_updated=sync_results.get("updated_products", 0),
-        #     rows_deleted=sync_results.get("deleted_stocks", 0)
-        # )
+        report.set_metrics({
+            "products_updated": sync_results["products_updated"],
+            "skus_updated": sync_results["skus_updated"],
+            "stocks_upserted": sync_results["stocks_upserted"],
+            "products_reset": sync_results["products_reset"],
+            "skus_reset": sync_results["skus_reset"],
+            "stocks_deleted": sync_results["stocks_deleted"]
+        })
 
         report.set_success()
         logger.success(f"Импорт '{FILE_STOCK_PRICES}' успешно завершён.")

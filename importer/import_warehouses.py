@@ -110,7 +110,6 @@ def _parse_warehouses(xml_path: Path, report: ImportReport) -> list[WarehouseRow
             report.add_row_error(total_lines, f"Неизвестная ошибка парсинга: {e}")
             continue
 
-    report.set_rows_parsed(len(rows))
     return rows
 
 
@@ -124,6 +123,8 @@ def import_warehouses(xml_path: Path, report: ImportReport) -> None:
     logger.info(f"Параметры импорта: delete={is_delete}")
 
     rows = _parse_warehouses(xml_path, report)
+
+    report.set_products_parsed(len(rows))
 
     if not rows:
         logger.warning(f"В файле {xml_path.name} нет валидных строк для импорта.")
@@ -144,10 +145,10 @@ def import_warehouses(xml_path: Path, report: ImportReport) -> None:
         delete_sql_path=conf["delete"],
     )
 
-    report.set_sync_results(
-        rows_inserted=sync_results["rows_inserted"],
-        rows_updated=sync_results["rows_updated"],
-        rows_deleted=sync_results["rows_deleted"],
-    )
+    report.set_metrics({
+        "db_inserted": sync_results["db_inserted"],
+        "db_updated": sync_results["db_updated"],
+        "db_deleted": sync_results["db_deleted"]
+    })
 
     logger.success(f"Импорт '{FILE_WAREHOUSES}' завершён.")

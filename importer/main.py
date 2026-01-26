@@ -94,14 +94,6 @@ def main():
 
     history_reports = filter_reports_by_retention(history_reports, hours=24)
 
-    # if all_reports:
-    #     try:
-    #         with open(report_file_path, "w", encoding="utf-8") as f:
-    #             json.dump(all_reports, f, ensure_ascii=False, indent=2)
-    #         logger.info(f"Отчет обновлен: {report_file_path}")
-    #     except Exception as e:
-    #         logger.exception(f"Не удалось сохранить файл отчета. Ошибка: {e}")
-
     try:
         with open(report_file_path, "w", encoding="utf-8") as f:
             json.dump(history_reports, f, ensure_ascii=False, indent=2)

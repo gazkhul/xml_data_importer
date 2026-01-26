@@ -19,22 +19,22 @@ class ImportReport:
         self.status = "pending"
         self.started_at = self._get_current_time_iso()
         self.finished_at: str | None = None
-        self.rows_parsed: int = 0
-        self.rows_inserted: int = 0
-        self.rows_updated: int = 0
-        self.rows_deleted: int = 0
+        self.products_parsed = 0
+        self.metrics: dict[str, int] = {}
         self.row_errors: list[dict[str, Any]] = []
         self.error: dict[str, Any] | None = None
+
+    def set_products_parsed(self, count: int):
+        """Устанавливает количество распарсенных товаров."""
+        self.products_parsed = count
+
+    def set_metrics(self, metrics: dict[str, int]):
+        """Устанавливает специфичные метрики для каждого xml-файла."""
+        self.metrics = metrics
 
     def set_info_update_date(self, date_str: str) -> None:
         """Устанавливает дату обновления из XML файла."""
         self.info_update_date = date_str
-
-    def set_rows_parsed(self, count: int) -> None:
-        """
-        Устанавливает количество разобранных строк.
-        """
-        self.rows_parsed = count
 
     def add_row_error(self, line_number: int, message: str) -> None:
         """
@@ -68,30 +68,17 @@ class ImportReport:
             "traceback": traceback.format_exc()
         }
 
-    def set_sync_results(self, rows_inserted: int, rows_updated: int, rows_deleted: int) -> None:
-        """
-        Устанавливает результаты синхронизации данных.
-        """
-        self.rows_inserted = rows_inserted
-        self.rows_updated = rows_updated
-        self.rows_deleted = rows_deleted
-
     def to_dict(self) -> dict[str, Any]:
-        """
-        Возвращает словарь с данными отчета.
-        """
         return {
             "info_update_date": self.info_update_date,
             "file": self.file_name,
             "status": self.status,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
-            "rows_parsed": self.rows_parsed,
-            "rows_inserted": self.rows_inserted,
-            "rows_updated": self.rows_updated,
-            "rows_deleted": self.rows_deleted,
+            "products_parsed": self.products_parsed,
+            "metrics": self.metrics,
             "row_errors": self.row_errors,
-            "error": self.error,
+            "error": self.error
         }
 
     def _get_current_time_iso(self) -> str:

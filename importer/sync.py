@@ -36,9 +36,9 @@ def sync_data(
     cursor = conn.cursor()
 
     stats = {
-        "rows_inserted": 0,
-        "rows_updated": 0,
-        "rows_deleted": 0,
+        "db_inserted": 0,
+        "db_updated": 0,
+        "db_deleted": 0,
     }
 
     try:
@@ -57,22 +57,14 @@ def sync_data(
             cursor.executemany(insert_tmp_sql, batch)
 
         cursor.execute(_load_sql(update_sql_path))
-        stats["rows_updated"] += cursor.rowcount
+        stats["db_updated"] += cursor.rowcount
 
         cursor.execute(_load_sql(insert_sql_path))
-        stats["rows_inserted"] += cursor.rowcount
-
+        stats["db_inserted"] += cursor.rowcount
 
         if is_delete:
             cursor.execute(_load_sql(delete_sql_path))
-            stats["rows_deleted"] += cursor.rowcount
-
-        logger.info(
-            f"Синхронизация '{target_table}': "
-            f"inserted={stats['rows_inserted']}, "
-            f"updated={stats['rows_updated']}, "
-            f"deleted={stats['rows_deleted']}."
-        )
+            stats["db_deleted"] += cursor.rowcount
 
         conn.commit()
         logger.success("Транзакция зафиксирована.")
@@ -101,7 +93,14 @@ def sync_stock_prices(
     conn = connect_db(config=app_db_config)
     cursor = conn.cursor()
 
-    stats = {}
+    stats = {
+        "products_updated": 0,
+        "skus_updated": 0,
+        "stocks_upserted": 0,
+        "products_reset": 0,
+        "skus_reset": 0,
+        "stocks_deleted": 0
+    }
 
     products_tuples = [(p.product_id_1c, p.price, p.total_quantity) for p in products_data]
     stocks_tuples = [(s.product_id_1c, s.stock_id_1c, s.quantity) for s in stocks_data]
@@ -125,25 +124,25 @@ def sync_stock_prices(
                 cursor.executemany(_load_sql(cfg["insert_tmp_stocks"]), batch)
 
         cursor.execute(_load_sql(cfg["update_products"]))
-        # stats["updated_products"] = cursor.rowcount
+        stats["products_updated"] = cursor.rowcount
 
         cursor.execute(_load_sql(cfg["update_skus"]))
-        # stats["updated_skus"] = cursor.rowcount
+        stats["skus_updated"] = cursor.rowcount
 
         cursor.execute(_load_sql(cfg["upsert_stocks"]))
-        # stats["upserted_stocks"] = cursor.rowcount
+        stats["stocks_upserted"] = cursor.rowcount
 
         cursor.execute(_load_sql(cfg["delete_missing_stocks_per_product"]))
 
         if reset_flag:
             cursor.execute(_load_sql(cfg["reset_products"]))
-            # stats["reset_products"] = cursor.rowcount
+            stats["products_reset"] = cursor.rowcount
 
             cursor.execute(_load_sql(cfg["reset_skus"]))
-            # stats["reset_skus"] = cursor.rowcount
+            stats["skus_reset"] = cursor.rowcount
 
             cursor.execute(_load_sql(cfg["delete_stocks_for_missing_products"]))
-            # stats["deleted_stocks"] = cursor.rowcount
+            stats["stocks_deleted"] = cursor.rowcount
 
         cursor.execute(_load_sql(cfg["clean_logs"]))
 

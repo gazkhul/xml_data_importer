@@ -5,3 +5,4 @@ SET
     s.price = t.price,
     s.primary_price = t.price,
     s.count = t.total_quantity;
+    s.available = 1;

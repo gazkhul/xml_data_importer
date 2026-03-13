@@ -4,5 +4,5 @@ JOIN shop_product p ON p.id = s.product_id
 SET
     s.price = t.price,
     s.primary_price = t.price,
-    s.count = t.total_quantity;
+    s.count = t.total_quantity,
     s.available = 1;
